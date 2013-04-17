@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans
+    PUBLIC "-//SPRING//DTD BEAN//EN"
+    "http://www.springframework.org/dtd/spring-beans.dtd"
+>
+<beans>
+    <bean id="fooAction" class="org.seasar.dbflute.unit.spring.action.FooAction" autowire="byType">
+    </bean>
+    <bean id="fooBhv" class="org.seasar.dbflute.unit.spring.dbflute.exbhv.FooBhv" autowire="byType">
+    </bean>
+</beans>

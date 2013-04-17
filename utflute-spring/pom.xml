@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.seasar.dbflute</groupId>
+		<artifactId>utflute-base</artifactId>
+		<version>0.2.1</version>
+	</parent>
+	<artifactId>utflute-spring</artifactId>
+	<packaging>jar</packaging>
+
+	<name>UTFlute Spring</name>
+	<description>The unit test library for Spring Framework (with DBFlute)</description>
+
+	<properties>
+		<spring.version>2.5.6</spring.version>
+		<utflute.core.version>0.2.1</utflute.core.version>
+	</properties>
+
+	<dependencies>
+		<!-- =============== -->
+		<!-- |   compile   | -->
+		<!-- =============== -->
+		<dependency>
+			<groupId>org.seasar.dbflute</groupId>
+			<artifactId>utflute-core</artifactId>
+			<version>${utflute.core.version}</version>
+		</dependency>
+
+		<!-- ================ -->
+		<!-- |   provided   | -->
+		<!-- ================ -->
+		<dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring</artifactId>
+		    <version>${spring.version}</version>
+		    <scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>commons-dbcp</groupId>
+			<artifactId>commons-dbcp</artifactId>
+			<version>1.3</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+</project>

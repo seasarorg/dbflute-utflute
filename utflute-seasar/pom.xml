@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.seasar.dbflute</groupId>
+		<artifactId>utflute-base</artifactId>
+		<version>0.2.1</version>
+	</parent>
+	<artifactId>utflute-seasar</artifactId>
+	<packaging>jar</packaging>
+
+	<name>UTFlute Seasar</name>
+	<description>The unit test library for Seasar (with DBFlute)</description>
+
+	<properties>
+		<seasar.version>2.4.44</seasar.version>
+		<sastruts.version>1.0.4-sp7</sastruts.version>
+		<utflute.core.version>0.2.1</utflute.core.version>
+	</properties>
+
+	<dependencies>
+		<!-- =============== -->
+		<!-- |   compile   | -->
+		<!-- =============== -->
+		<dependency>
+			<groupId>org.seasar.dbflute</groupId>
+			<artifactId>utflute-core</artifactId>
+			<version>${utflute.core.version}</version>
+		</dependency>
+
+		<!-- ================ -->
+		<!-- |   provided   | -->
+		<!-- ================ -->
+		<dependency>
+			<groupId>org.seasar.container</groupId>
+			<artifactId>s2-tiger</artifactId>
+			<version>${seasar.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.easymock</groupId>
+					<artifactId>easymock</artifactId>
+				</exclusion>
+			</exclusions>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+		    <groupId>org.seasar.cms.s2-classbuilder</groupId>
+		    <artifactId>s2-classbuilder</artifactId>
+		    <version>0.0.11</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.seasar.container</groupId>
+					<artifactId>s2-framework</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.seasar.container</groupId>
+					<artifactId>s2-extension</artifactId>
+				</exclusion>
+			</exclusions>
+			<scope>provided</scope>
+		</dependency>
+        <dependency>
+            <groupId>org.seasar.sastruts</groupId>
+            <artifactId>sa-struts</artifactId>
+            <version>${sastruts.version}</version>
+			<scope>provided</scope>
+        </dependency>
+	</dependencies>
+</project>

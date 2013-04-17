@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE components PUBLIC "-//SEASAR//DTD S2Container 2.4//EN" 
+	"http://www.seasar.org/dtd/components24.dtd">
+<components>
+  <include path="default-customizer.dicon"/>
+
+  <component name="formCustomizer" class="org.seasar.framework.container.customizer.CustomizerChain"/>
+
+  <!-- = = = = = = = = = = = = = = = = = = -->
+  <!-- not need to intercept in test cases -->
+  <!-- = = = = = = = = = = = = = = = = = = -->
+
+  <component name="actionCustomizer" class="org.seasar.framework.container.customizer.CustomizerChain">
+  </component>
+
+  <component name="serviceCustomizer" class="org.seasar.framework.container.customizer.CustomizerChain">
+  </component>
+
+  <component name="logicCustomizer" class="org.seasar.framework.container.customizer.CustomizerChain">
+  </component>
+
+  <component name="helperCustomizer" class="org.seasar.framework.container.customizer.CustomizerChain">
+  </component>
+</components>

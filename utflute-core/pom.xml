@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.seasar.dbflute</groupId>
+		<artifactId>utflute-base</artifactId>
+		<version>0.2.1</version>
+	</parent>
+	<artifactId>utflute-core</artifactId>
+	<packaging>jar</packaging>
+
+	<name>UTFlute Core</name>
+	<description>The core project of unit test library (with DBFlute)</description>
+</project>

@@ -178,12 +178,15 @@ public class ThreadFireMan {
                         txRes = beginTransaction();
                     }
                     RESULT result = null;
+                    RuntimeException cause = null;
                     try {
                         execution.execute(new ThreadFireResource(threadId, parameter, yourLatch));
+                    } catch (RuntimeException e) {
+                        cause = e;
                     } finally {
                         if (txRes != null) {
                             try {
-                                if (option.isCommitTransaction()) {
+                                if (cause == null && option.isCommitTransaction()) {
                                     txRes.commit();
                                 } else {
                                     txRes.rollback();
@@ -193,6 +196,9 @@ public class ThreadFireMan {
                             }
                         }
                         clearAccessContext();
+                    }
+                    if (cause != null) {
+                        throw cause;
                     }
                     return result;
                 } finally {

@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.seasar.dbflute</groupId>
 		<artifactId>utflute-base</artifactId>
-		<version>0.2.1</version>
+		<version>0.2.2</version>
 	</parent>
 	<artifactId>utflute-seasar</artifactId>
 	<packaging>jar</packaging>
@@ -16,7 +16,7 @@
 	<properties>
 		<seasar.version>2.4.44</seasar.version>
 		<sastruts.version>1.0.4-sp7</sastruts.version>
-		<utflute.core.version>0.2.1</utflute.core.version>
+		<utflute.core.version>0.2.2</utflute.core.version>
 	</properties>
 
 	<dependencies>

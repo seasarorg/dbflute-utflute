@@ -475,6 +475,33 @@ public abstract class PlainTestCase extends TestCase {
     protected void rollbackTransaction(TransactionResource resource) {
     }
 
+    protected void performNewTransaction(TransactionPerformer performer) {
+        final TransactionResource resource = beginTransaction();
+        RuntimeException cause = null;
+        try {
+            performer.perform();
+        } catch (RuntimeException e) {
+            cause = e;
+        } finally {
+            if (cause != null) {
+                rollbackTransaction(resource);
+            } else {
+                try {
+                    commitTransaction(resource);
+                } catch (RuntimeException ignored) {
+                    rollbackTransaction(resource);
+                }
+            }
+        }
+        if (cause != null) {
+            throw cause;
+        }
+    }
+
+    protected static interface TransactionPerformer {
+        void perform();
+    }
+
     protected void xassertTransactionResourceNotNull(TransactionResource resource) {
         if (resource == null) {
             String msg = "The argument 'resource' should not be null.";

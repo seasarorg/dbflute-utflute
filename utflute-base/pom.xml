@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.seasar.dbflute</groupId>
 	<artifactId>utflute-base</artifactId>
-	<version>0.2.1</version><!-- Latest RC version is 00-SNAPSHOT -->
+	<version>0.2.2</version><!-- Latest RC version is 00-SNAPSHOT -->
 	<packaging>pom</packaging>
 
 	<name>UTFlute Pom Base</name>

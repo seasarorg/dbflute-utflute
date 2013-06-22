@@ -13,17 +13,16 @@
  * either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.seasar.dbflute.unit.core.thread;
+package org.seasar.dbflute.unit.core.transaction;
 
 /**
  * @author jflute
- * @since 0.1.0 (2011/07/24 Sunday)
  */
-public class ThreadFireFailureException extends RuntimeException {
+public interface TransactionPerformer {
 
-    private static final long serialVersionUID = 1L;
-
-    public ThreadFireFailureException(String msg, Throwable e) {
-        super(msg, e);
-    }
+    /**
+     * Perform the process in new transaction.
+     * @return Does it commit the transaction?
+     */
+    boolean perform();
 }

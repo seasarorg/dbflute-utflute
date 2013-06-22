@@ -1,3 +1,18 @@
+/*
+ * Copyright 2004-2013 the Seasar Foundation and the Others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package org.seasar.dbflute.unit.spring;
 
 import org.seasar.dbflute.unit.core.InjectionTestCase;
@@ -58,17 +73,17 @@ public abstract class SpringTestCase extends InjectionTestCase {
     protected String[] prepareConfigFiles() { // customize point
         return new String[] {}; // as default
     }
-    
+
     protected ApplicationContext createApplicationContext(String[] confs) {
         return new ClassPathXmlApplicationContext(confs);
     }
 
     @Override
-    protected TransactionResource beginTransaction() { // user method
+    protected TransactionResource beginNewTransaction() { // user method
         final String managerKey = "transactionManager";
         final PlatformTransactionManager manager = getComponent(managerKey);
         final DefaultTransactionDefinition def = new DefaultTransactionDefinition();
-        def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         final TransactionStatus status = manager.getTransaction(def);
         final SpringTransactionResource resource = new SpringTransactionResource();
         resource.setTransactionManager(manager);
@@ -85,7 +100,7 @@ public abstract class SpringTestCase extends InjectionTestCase {
     //                                                                     Spring Handling
     //                                                                     ===============
     protected void xdestroyContainer() {
-        // TODO: How?
+        // How? (but no problem for now because of test case world only)
     }
 
     @SuppressWarnings("unchecked")

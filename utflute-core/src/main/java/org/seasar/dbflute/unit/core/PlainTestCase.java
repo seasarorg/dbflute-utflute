@@ -1,3 +1,18 @@
+/*
+ * Copyright 2004-2013 the Seasar Foundation and the Others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package org.seasar.dbflute.unit.core;
 
 import java.math.BigDecimal;
@@ -21,6 +36,7 @@ import org.seasar.dbflute.unit.core.thread.ThreadFireExecution;
 import org.seasar.dbflute.unit.core.thread.ThreadFireHelper;
 import org.seasar.dbflute.unit.core.thread.ThreadFireMan;
 import org.seasar.dbflute.unit.core.thread.ThreadFireOption;
+import org.seasar.dbflute.unit.core.transaction.TransactionPerformer;
 import org.seasar.dbflute.unit.core.transaction.TransactionResource;
 import org.seasar.dbflute.util.DfCollectionUtil;
 import org.seasar.dbflute.util.DfStringUtil;
@@ -37,9 +53,6 @@ public abstract class PlainTestCase extends TestCase {
     //                                                                          ==========
     /** Log instance for sub class. */
     private final Logger _logger = Logger.getLogger(getClass());
-
-    /** The string for NO message. */
-    private final String NO_MSG = "";
 
     // ===================================================================================
     //                                                                            Settings
@@ -86,7 +99,7 @@ public abstract class PlainTestCase extends TestCase {
     }
 
     protected void assertEquals(int expected, Integer actual) {
-        assertEquals(NO_MSG, Integer.valueOf(expected), actual);
+        assertEquals(null, Integer.valueOf(expected), actual);
     }
 
     // -----------------------------------------------------
@@ -422,7 +435,7 @@ public abstract class PlainTestCase extends TestCase {
     protected <RESULT> void threadFire(ThreadFireExecution<RESULT> execution, ThreadFireOption option) {
         final ThreadFireMan fireMan = new ThreadFireMan(new ThreadFireHelper() {
             public TransactionResource help_beginTransaction() {
-                return beginTransaction();
+                return beginNewTransaction();
             }
 
             public void help_prepareAccessContext() {
@@ -464,8 +477,13 @@ public abstract class PlainTestCase extends TestCase {
     // ===================================================================================
     //                                                                  Reserved Interface
     //                                                                  ==================
-    // should be overridden by DI container's test case
-    protected TransactionResource beginTransaction() {
+    /**
+     * Begin new transaction even if the transaction has already been begun. <br />
+     * Also you can use {@link #performNewTransaction(TransactionPerformer)}.
+     * @return The resource of transaction, you can commit or roll-back it. (basically NotNull: if null, transaction unsupported)
+     */
+    protected TransactionResource beginNewTransaction() {
+        // should be overridden by DI container's test case
         return null;
     }
 
@@ -475,31 +493,40 @@ public abstract class PlainTestCase extends TestCase {
     protected void rollbackTransaction(TransactionResource resource) {
     }
 
+    /**
+     * Perform the process in new transaction. you can select commit or roll-back.
+     * @param performer The callback for the transaction process. (NotNull)
+     */
     protected void performNewTransaction(TransactionPerformer performer) {
-        final TransactionResource resource = beginTransaction();
+        final TransactionResource resource = beginNewTransaction();
         RuntimeException cause = null;
+        boolean commit = false;
         try {
-            performer.perform();
+            commit = performer.perform();
         } catch (RuntimeException e) {
             cause = e;
         } finally {
-            if (cause != null) {
-                rollbackTransaction(resource);
-            } else {
+            if (commit && cause == null) {
                 try {
                     commitTransaction(resource);
-                } catch (RuntimeException ignored) {
+                } catch (RuntimeException e) {
+                    cause = e;
+                }
+            } else {
+                try {
                     rollbackTransaction(resource);
+                } catch (RuntimeException e) {
+                    if (cause != null) {
+                        log(e.getMessage());
+                    } else {
+                        cause = e;
+                    }
                 }
             }
         }
         if (cause != null) {
             throw cause;
         }
-    }
-
-    protected static interface TransactionPerformer {
-        void perform();
     }
 
     protected void xassertTransactionResourceNotNull(TransactionResource resource) {

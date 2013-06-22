@@ -1,10 +1,27 @@
+/*
+ * Copyright 2004-2013 the Seasar Foundation and the Others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package org.seasar.dbflute.unit.seasar;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.transaction.NotSupportedException;
+import javax.transaction.Status;
 import javax.transaction.SystemException;
+import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 
 import org.seasar.dbflute.unit.core.InjectionTestCase;
@@ -68,16 +85,29 @@ public abstract class SeasarTestCase extends InjectionTestCase {
     }
 
     @Override
-    protected TransactionResource beginTransaction() { // user method
+    protected TransactionResource beginNewTransaction() { // user method
+        final TransactionManager manager = getComponent(TransactionManager.class);
+        final Transaction suspendedTx;
         try {
-            final TransactionManager manager = getComponent(TransactionManager.class);
+            if (manager.getStatus() != Status.STATUS_NO_TRANSACTION) {
+                suspendedTx = manager.suspend(); // because Seasar's DBCP doesn't support nested transaction
+            } else {
+                suspendedTx = null;
+            }
+        } catch (SystemException e) {
+            throw new TransactionFailureException("Failed to suspend current", e);
+        }
+        TransactionResource resource = null;
+        try {
             manager.begin();
-            return new TransactionResource() {
+            resource = new TransactionResource() {
                 public void commit() {
                     try {
                         manager.commit();
                     } catch (Exception e) {
                         throw new TransactionFailureException("Failed to commit the transaction.", e);
+                    } finally {
+                        xresumeSuspendedTxQuietly(manager, suspendedTx);
                     }
                 }
 
@@ -86,14 +116,28 @@ public abstract class SeasarTestCase extends InjectionTestCase {
                         manager.rollback();
                     } catch (Exception e) {
                         throw new TransactionFailureException("Failed to roll-back the transaction.", e);
+                    } finally {
+                        xresumeSuspendedTxQuietly(manager, suspendedTx);
                     }
                 }
             }; // for thread-fire's transaction or manual transaction
         } catch (NotSupportedException e) {
-            throw new IllegalStateException(e);
+            throw new TransactionFailureException("Failed to begin new transaction.", e);
         } catch (SystemException e) {
-            throw new IllegalStateException(e);
+            throw new TransactionFailureException("Failed to begin new transaction.", e);
         }
+        return resource;
+    }
+
+    protected void xresumeSuspendedTxQuietly(TransactionManager manager, Transaction suspendedTx) {
+        try {
+            if (suspendedTx != null) {
+                manager.resume(suspendedTx);
+            }
+        } catch (Exception e) {
+            log(e.getMessage());
+        }
+
     }
 
     @Override

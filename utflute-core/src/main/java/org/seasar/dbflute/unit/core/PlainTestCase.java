@@ -478,8 +478,10 @@ public abstract class PlainTestCase extends TestCase {
     //                                                                  Reserved Interface
     //                                                                  ==================
     /**
-     * Begin new transaction even if the transaction has already been begun. <br />
-     * Also you can use {@link #performNewTransaction(TransactionPerformer)}.
+     * Begin new transaction (even if the transaction has already been begun). <br />
+     * You can manually commit or roll-back at your favorite timing by returned transaction resource. <br />
+     * On the other hand, you might have mistake of transaction handling. <br />
+     * So, also you can use {@link #performNewTransaction(TransactionPerformer)}. (easier)
      * @return The resource of transaction, you can commit or roll-back it. (basically NotNull: if null, transaction unsupported)
      */
     protected TransactionResource beginNewTransaction() {
@@ -494,7 +496,16 @@ public abstract class PlainTestCase extends TestCase {
     }
 
     /**
-     * Perform the process in new transaction. you can select commit or roll-back.
+     * Perform the process in new transaction (even if the transaction has already been begun). <br />
+     * You can select commit or roll-back by returned value of the callback method. 
+     * <pre>
+     * performNewTransaction(new TransactionPerformer() {
+     *     public boolean perform() {
+     *         ... <span style="color: #3F7E5E">// transaction scope</span>
+     *         return false; <span style="color: #3F7E5E">// true: commit, false: roll-back</span>
+     *     }
+     * });
+     * </pre>
      * @param performer The callback for the transaction process. (NotNull)
      */
     protected void performNewTransaction(TransactionPerformer performer) {

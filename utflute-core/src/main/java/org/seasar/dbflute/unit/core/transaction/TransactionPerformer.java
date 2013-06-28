@@ -22,7 +22,7 @@ public interface TransactionPerformer {
 
     /**
      * Perform the process in new transaction.
-     * @return Does it commit the transaction?
+     * @return Does it commit the transaction? (false: roll-back)
      */
     boolean perform();
 }

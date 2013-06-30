@@ -53,6 +53,9 @@ public abstract class SpringTestCase extends InjectionTestCase {
     // ===================================================================================
     //                                                                            Settings
     //                                                                            ========
+    // -----------------------------------------------------
+    //                                     Prepare Container
+    //                                     -----------------
     @Override
     protected void xprepareTestCaseContainer() {
         if (_cachedApplicationContext != null) {
@@ -79,6 +82,14 @@ public abstract class SpringTestCase extends InjectionTestCase {
     }
 
     @Override
+    protected void xclearCachedContainer() {
+        _cachedApplicationContext = null;
+    }
+
+    // ===================================================================================
+    //                                                                         Transaction
+    //                                                                         ===========
+    @Override
     protected TransactionResource beginNewTransaction() { // user method
         final String managerKey = "transactionManager";
         final PlatformTransactionManager manager = getComponent(managerKey);
@@ -89,11 +100,6 @@ public abstract class SpringTestCase extends InjectionTestCase {
         resource.setTransactionManager(manager);
         resource.setTransactionStatus(status);
         return resource; // for thread-fire's transaction or manual transaction
-    }
-
-    @Override
-    protected void xclearCachedContainer() {
-        _cachedApplicationContext = null;
     }
 
     // ===================================================================================

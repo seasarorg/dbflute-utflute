@@ -57,12 +57,18 @@ public abstract class SeasarTestCase extends InjectionTestCase {
     // ===================================================================================
     //                                                                            Settings
     //                                                                            ========
+    // -----------------------------------------------------
+    //                                      Before Container
+    //                                      ----------------
     @Override
     protected void xsetupBeforeContainer() {
         super.xsetupBeforeContainer();
         xprepareUnitTestEnv();
     }
 
+    // -----------------------------------------------------
+    //                                     Prepare Container
+    //                                     -----------------
     @Override
     protected void xprepareTestCaseContainer() {
         final String configFile = prepareConfigFile();
@@ -84,6 +90,14 @@ public abstract class SeasarTestCase extends InjectionTestCase {
         return "app.dicon"; // as default
     }
 
+    @Override
+    protected void xclearCachedContainer() {
+        _preparedConfigFile = null;
+    }
+
+    // ===================================================================================
+    //                                                                         Transaction
+    //                                                                         ===========
     @Override
     protected TransactionResource beginNewTransaction() { // user method
         final TransactionManager manager = getComponent(TransactionManager.class);
@@ -138,11 +152,6 @@ public abstract class SeasarTestCase extends InjectionTestCase {
             log(e.getMessage());
         }
 
-    }
-
-    @Override
-    protected void xclearCachedContainer() {
-        _preparedConfigFile = null;
     }
 
     // ===================================================================================

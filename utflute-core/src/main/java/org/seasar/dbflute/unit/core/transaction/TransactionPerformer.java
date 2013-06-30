@@ -16,6 +16,15 @@
 package org.seasar.dbflute.unit.core.transaction;
 
 /**
+ * The performer's callback of transaction.
+ * <pre>
+ * performNewTransaction(new TransactionPerformer() {
+ *     public boolean perform() { <span style="color: #3F7E5E">// transaction scope</span>
+ *         ...
+ *         return false; <span style="color: #3F7E5E">// true: commit, false: roll-back</span>
+ *     }
+ * });
+ * </pre>
  * @author jflute
  */
 public interface TransactionPerformer {

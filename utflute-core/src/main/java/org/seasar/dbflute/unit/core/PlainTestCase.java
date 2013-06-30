@@ -426,8 +426,8 @@ public abstract class PlainTestCase extends TestCase {
     }
 
     // ===================================================================================
-    //                                                                       Thread Helper
-    //                                                                       =============
+    //                                                                         Thread Fire
+    //                                                                         ===========
     protected <RESULT> void threadFire(ThreadFireExecution<RESULT> execution) {
         threadFire(execution, new ThreadFireOption());
     }
@@ -475,8 +475,9 @@ public abstract class PlainTestCase extends TestCase {
     }
 
     // ===================================================================================
-    //                                                                  Reserved Interface
-    //                                                                  ==================
+    //                                                                         Transaction
+    //                                                                         ===========
+    // reserved interfaces
     /**
      * Begin new transaction (even if the transaction has already been begun). <br />
      * You can manually commit or roll-back at your favorite timing by returned transaction resource. <br />
@@ -500,8 +501,8 @@ public abstract class PlainTestCase extends TestCase {
      * You can select commit or roll-back by returned value of the callback method. 
      * <pre>
      * performNewTransaction(new TransactionPerformer() {
-     *     public boolean perform() {
-     *         ... <span style="color: #3F7E5E">// transaction scope</span>
+     *     public boolean perform() { <span style="color: #3F7E5E">// transaction scope</span>
+     *         ...
      *         return false; <span style="color: #3F7E5E">// true: commit, false: roll-back</span>
      *     }
      * });

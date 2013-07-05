@@ -15,27 +15,15 @@
  */
 package org.seasar.dbflute.unit.core.transaction;
 
-import java.sql.SQLException;
-
 /**
- * The performer's callback of transaction.
- * <pre>
- * performNewTransaction(new TransactionPerformer() {
- *     public boolean perform() { <span style="color: #3F7E5E">// transaction scope</span>
- *         ...
- *         return false; <span style="color: #3F7E5E">// true: commit, false: roll-back</span>
- *     }
- * });
- * </pre>
  * @author jflute
- * @since 0.3.0 (2013/06/22 Saturday)
+ * @since 0.3.2 (2013/07/05 Friday)
  */
-public interface TransactionPerformer {
+public class TransactionPerformanceFailureException extends RuntimeException {
 
-    /**
-     * Perform the process in new transaction.
-     * @return Does it commit the transaction? (false: roll-back)
-     * @throws SQLException
-     */
-    boolean perform() throws SQLException;
+    private static final long serialVersionUID = 1L;
+
+    public TransactionPerformanceFailureException(String msg, Throwable e) {
+        super(msg, e);
+    }
 }

@@ -58,7 +58,10 @@ public abstract class SpringTestCase extends InjectionTestCase {
     //                                     -----------------
     @Override
     protected void xprepareTestCaseContainer() {
-        if (_cachedApplicationContext != null) {
+        if (isUseOneTimeContainer()) {
+            _cachedApplicationContext = null;
+        }
+        if (_cachedApplicationContext != null) { // already exists
             _currentApplicationContext = _cachedApplicationContext;
             return;
         }

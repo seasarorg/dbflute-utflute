@@ -71,6 +71,9 @@ public abstract class SeasarTestCase extends InjectionTestCase {
     //                                     -----------------
     @Override
     protected void xprepareTestCaseContainer() {
+        if (isUseOneTimeContainer()) {
+            xdestroyContainer();
+        }
         final String configFile = prepareConfigFile();
         if (xisInitializedContainer()) {
             if (configFile.equals(_preparedConfigFile)) { // no change
@@ -81,6 +84,10 @@ public abstract class SeasarTestCase extends InjectionTestCase {
         }
         xinitializeContainer(configFile);
         _preparedConfigFile = configFile;
+    }
+
+    protected boolean isUseOneTimeContainer() {
+        return false;
     }
 
     /**

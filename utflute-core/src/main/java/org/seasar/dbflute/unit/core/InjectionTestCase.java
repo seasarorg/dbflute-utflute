@@ -61,6 +61,10 @@ public abstract class InjectionTestCase extends PlainTestCase {
 
     protected abstract void xprepareTestCaseContainer();
 
+    protected boolean isUseOneTimeContainer() {
+        return false;
+    }
+
     protected void xprepareTestCaseComponent() {
         _testCaseBoundResult = _testCaseComponentBinder.bindComponent(this);
     }
@@ -128,7 +132,7 @@ public abstract class InjectionTestCase extends PlainTestCase {
     }
 
     protected void xdestroyTestCaseContainer() {
-        if (isDestroyContainerAtTearDown()) {
+        if (isUseOneTimeContainer() || isDestroyContainerAtTearDown()) {
             xdestroyContainer();
             xclearCachedContainer();
         }

@@ -16,6 +16,7 @@
 package org.seasar.dbflute.unit.spring;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.Map;
 
 import org.seasar.dbflute.unit.core.InjectionTestCase;
@@ -46,6 +47,7 @@ public abstract class SpringTestCase extends InjectionTestCase {
     // -----------------------------------------------------
     //                                          Static Cache
     //                                          ------------
+    private static String[] _preparedConfigFiles;
     private static ApplicationContext _cachedApplicationContext;
 
     // -----------------------------------------------------
@@ -65,19 +67,21 @@ public abstract class SpringTestCase extends InjectionTestCase {
         if (isUseOneTimeContainer()) {
             xdestroyContainer();
         }
-        if (_cachedApplicationContext != null) { // already exists
-            _currentApplicationContext = _cachedApplicationContext;
-            return;
+        final String[] configFiles = prepareConfigFiles();
+        if (xisInitializedContainer()) { // already exists
+            if (xisEqualWithPreparedConfigurations(configFiles)) { // no change
+                _currentApplicationContext = _cachedApplicationContext;
+                return; // no need to initialize
+            } else { // changed
+                xdestroyContainer();
+            }
         }
-        final String[] confs = prepareConfigFiles();
-        if (confs != null && confs.length > 0) {
-            _currentApplicationContext = new ClassPathXmlApplicationContext(confs);
-        } else {
-            final BeanFactoryLocator locator = ContextSingletonBeanFactoryLocator.getInstance();
-            final BeanFactoryReference ref = locator.useBeanFactory("context");
-            _currentApplicationContext = (ApplicationContext) ref.getFactory();
-        }
-        _cachedApplicationContext = _currentApplicationContext;
+        xinitializeContainer(configFiles);
+        _preparedConfigFiles = configFiles;
+    }
+
+    protected boolean xisEqualWithPreparedConfigurations(String[] configFiles) {
+        return configFiles != null && Arrays.asList(configFiles).equals(Arrays.asList(_preparedConfigFiles));
     }
 
     protected String[] prepareConfigFiles() { // customize point
@@ -112,6 +116,21 @@ public abstract class SpringTestCase extends InjectionTestCase {
     // ===================================================================================
     //                                                                     Spring Handling
     //                                                                     ===============
+    protected boolean xisInitializedContainer() {
+        return _cachedApplicationContext != null;
+    }
+
+    protected void xinitializeContainer(String[] configFiles) {
+        if (configFiles != null && configFiles.length > 0) {
+            _currentApplicationContext = new ClassPathXmlApplicationContext(configFiles);
+        } else {
+            final BeanFactoryLocator locator = ContextSingletonBeanFactoryLocator.getInstance();
+            final BeanFactoryReference ref = locator.useBeanFactory("context");
+            _currentApplicationContext = (ApplicationContext) ref.getFactory();
+        }
+        _cachedApplicationContext = _currentApplicationContext;
+    }
+
     protected void xdestroyContainer() {
         xreleaseClassPathContext();
         xreleaseLocatorContextCache();

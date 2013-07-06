@@ -15,8 +15,12 @@
  */
 package org.seasar.dbflute.unit.spring;
 
+import java.lang.reflect.Field;
+import java.util.Map;
+
 import org.seasar.dbflute.unit.core.InjectionTestCase;
 import org.seasar.dbflute.unit.core.transaction.TransactionResource;
+import org.seasar.dbflute.util.DfReflectionUtil;
 import org.seasar.dbflute.util.DfTypeUtil;
 import org.seasar.dbflute.util.Srl;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -59,7 +63,7 @@ public abstract class SpringTestCase extends InjectionTestCase {
     @Override
     protected void xprepareTestCaseContainer() {
         if (isUseOneTimeContainer()) {
-            _cachedApplicationContext = null;
+            xdestroyContainer();
         }
         if (_cachedApplicationContext != null) { // already exists
             _currentApplicationContext = _cachedApplicationContext;
@@ -109,7 +113,25 @@ public abstract class SpringTestCase extends InjectionTestCase {
     //                                                                     Spring Handling
     //                                                                     ===============
     protected void xdestroyContainer() {
-        // How? (but no problem for now because of test case world only)
+        xreleaseClassPathContext();
+        xreleaseLocatorContextCache();
+        _currentApplicationContext = null;
+        _cachedApplicationContext = null;
+    }
+
+    protected void xreleaseClassPathContext() {
+        final ApplicationContext cachedContext = _cachedApplicationContext;
+        if (cachedContext != null && cachedContext instanceof ClassPathXmlApplicationContext) {
+            ((ClassPathXmlApplicationContext) cachedContext).destroy();
+        }
+    }
+
+    protected void xreleaseLocatorContextCache() {
+        final Class<ContextSingletonBeanFactoryLocator> locatorType = ContextSingletonBeanFactoryLocator.class;
+        final String cacheMapName = "instances";
+        final Field cacheMapField = DfReflectionUtil.getWholeField(locatorType, cacheMapName);
+        final Map<?, ?> instances = (Map<?, ?>) DfReflectionUtil.getValueForcedly(cacheMapField, null);
+        instances.clear();
     }
 
     @SuppressWarnings("unchecked")

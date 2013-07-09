@@ -19,11 +19,11 @@ package org.seasar.dbflute.unit.core.transaction;
  * @author jflute
  * @since 0.3.2 (2013/07/05 Friday)
  */
-public class TransactionPerformanceFailureException extends RuntimeException {
+public class TransactionPerformFailureException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
-    public TransactionPerformanceFailureException(String msg, Throwable e) {
+    public TransactionPerformFailureException(String msg, Throwable e) {
         super(msg, e);
     }
 }

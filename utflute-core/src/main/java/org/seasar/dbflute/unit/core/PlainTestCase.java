@@ -37,7 +37,7 @@ import org.seasar.dbflute.unit.core.thread.ThreadFireExecution;
 import org.seasar.dbflute.unit.core.thread.ThreadFireHelper;
 import org.seasar.dbflute.unit.core.thread.ThreadFireMan;
 import org.seasar.dbflute.unit.core.thread.ThreadFireOption;
-import org.seasar.dbflute.unit.core.transaction.TransactionPerformanceFailureException;
+import org.seasar.dbflute.unit.core.transaction.TransactionPerformFailureException;
 import org.seasar.dbflute.unit.core.transaction.TransactionPerformer;
 import org.seasar.dbflute.unit.core.transaction.TransactionResource;
 import org.seasar.dbflute.util.DfCollectionUtil;
@@ -510,7 +510,7 @@ public abstract class PlainTestCase extends TestCase {
      * });
      * </pre>
      * @param performer The callback for the transaction process. (NotNull)
-     * @throws TransactionPerformanceFailureException When the performance fails.
+     * @throws TransactionPerformFailureException When the performance fails.
      */
     protected void performNewTransaction(TransactionPerformer performer) {
         final TransactionResource resource = beginNewTransaction();
@@ -543,7 +543,7 @@ public abstract class PlainTestCase extends TestCase {
         }
         if (cause != null) {
             String msg = "Failed to perform the process in transaction: " + performer;
-            throw new TransactionPerformanceFailureException(msg, cause);
+            throw new TransactionPerformFailureException(msg, cause);
         }
     }
 

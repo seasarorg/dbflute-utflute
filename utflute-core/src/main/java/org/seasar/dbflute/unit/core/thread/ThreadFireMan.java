@@ -144,6 +144,7 @@ public class ThreadFireMan {
         for (Future<RESULT> future : futureList) {
             try {
                 final RESULT result = future.get();
+                System.out.println("result: " + result);
                 resultList.add(result);
             } catch (InterruptedException e) {
                 String msg = "future.get() was interrupted!";
@@ -195,7 +196,7 @@ public class ThreadFireMan {
                     RESULT result = null;
                     RuntimeException cause = null;
                     try {
-                        execution.execute(new ThreadFireResource(threadId, parameter, yourLatch));
+                        result = execution.execute(new ThreadFireResource(threadId, parameter, yourLatch));
                     } catch (RuntimeException e) {
                         cause = e;
                     } finally {

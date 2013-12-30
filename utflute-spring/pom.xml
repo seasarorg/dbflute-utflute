@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.seasar.dbflute</groupId>
 		<artifactId>utflute-base</artifactId>
-		<version>0.3.4</version>
+		<version>0.3.6</version>
 	</parent>
 	<artifactId>utflute-spring</artifactId>
 	<packaging>jar</packaging>
@@ -14,8 +14,8 @@
 	<description>The unit test library for Spring Framework (with DBFlute)</description>
 
 	<properties>
-		<spring.version>2.5.6</spring.version>
-		<utflute.core.version>0.3.4</utflute.core.version>
+		<spring.version>3.0.5.RELEASE</spring.version>
+		<utflute.core.version>0.3.6</utflute.core.version>
 	</properties>
 
 	<dependencies>
@@ -33,7 +33,13 @@
 		<!-- ================ -->
 		<dependency>
 		    <groupId>org.springframework</groupId>
-		    <artifactId>spring</artifactId>
+		    <artifactId>spring-core</artifactId>
+		    <version>${spring.version}</version>
+		    <scope>provided</scope>
+		</dependency>
+		<dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-jdbc</artifactId>
 		    <version>${spring.version}</version>
 		    <scope>provided</scope>
 		</dependency>

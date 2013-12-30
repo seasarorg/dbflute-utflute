@@ -22,8 +22,6 @@ import java.util.Map;
 import org.seasar.dbflute.unit.core.InjectionTestCase;
 import org.seasar.dbflute.unit.core.transaction.TransactionResource;
 import org.seasar.dbflute.util.DfReflectionUtil;
-import org.seasar.dbflute.util.DfTypeUtil;
-import org.seasar.dbflute.util.Srl;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.access.BeanFactoryLocator;
 import org.springframework.beans.factory.access.BeanFactoryReference;
@@ -153,10 +151,8 @@ public abstract class SpringTestCase extends InjectionTestCase {
         instances.clear();
     }
 
-    @SuppressWarnings("unchecked")
     protected <COMPONENT> COMPONENT getComponent(Class<COMPONENT> type) { // user method
-        final String name = Srl.initUncap(DfTypeUtil.toClassTitle(type));
-        return (COMPONENT) _currentApplicationContext.getBean(name);
+        return _currentApplicationContext.getBean(type);
     }
 
     @SuppressWarnings("unchecked")

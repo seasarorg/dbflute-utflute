@@ -108,10 +108,10 @@ public class ComponentBinder {
         Object component = findMockInstance(type);
         if (component == null) {
             final String name = normalizeAsPropertyName(field.getName());
-            if (hasComponent(name)) {
-                component = getComponent(name);
-            } else if (hasComponent(type)) {
+            if (hasComponent(type)) {
                 component = getComponent(type);
+            } else if (hasComponent(name)) {
+                component = getComponent(name);
             }
         }
         if (component != null) {

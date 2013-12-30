@@ -12,7 +12,7 @@ import org.springframework.beans.factory.FactoryBean;
  * This is NOT an important class as example. So you don't need to read this.
  * @author jflute
  */
-public class EmbeddedH2UrlFactoryBean implements FactoryBean {
+public class EmbeddedH2UrlFactoryBean implements FactoryBean<Object> {
 
     // ===================================================================================
     //                                                                           Attribute

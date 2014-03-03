@@ -482,18 +482,19 @@ public abstract class PlainTestCase extends TestCase {
     // ===================================================================================
     //                                                                         Thread Fire
     //                                                                         ===========
+    // not deprecated for now (only treated as old style in comment)
     /**
-     * @param execution
-     * @deprecated use cannonball()
+     * Its's old style. Use cannonball()
+     * @param execution The execution of thread-fire
      */
     protected <RESULT> void threadFire(ThreadFireExecution<RESULT> execution) {
         threadFire(execution, new ThreadFireOption());
     }
 
     /**
-     * @param execution
-     * @param option
-     * @deprecated use cannonball()
+     * Its's old style. Use cannonball()
+     * @param execution The execution of thread-fire
+     * @param option The option of thread-fire
      */
     protected <RESULT> void threadFire(ThreadFireExecution<RESULT> execution, ThreadFireOption option) {
         final ThreadFireMan fireMan = new ThreadFireMan(new ThreadFireHelper() {

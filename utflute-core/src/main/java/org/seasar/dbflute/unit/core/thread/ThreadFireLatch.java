@@ -28,7 +28,7 @@ public class ThreadFireLatch {
     //                                                                           =========
     protected final int _threadCount;
     protected final ThreadFireLogger _logger;
-    protected CountDownLatch _yourLatch;
+    protected CountDownLatch _ourLatch;
 
     // ===================================================================================
     //                                                                         Constructor
@@ -63,18 +63,18 @@ public class ThreadFireLatch {
     }
 
     protected CountDownLatch prepareLatch() {
-        if (_yourLatch == null) {
-            _yourLatch = new CountDownLatch(_threadCount);
+        if (_ourLatch == null) {
+            _ourLatch = new CountDownLatch(_threadCount);
         }
-        return _yourLatch;
+        return _ourLatch;
     }
 
     protected void clearLatch() {
-        _yourLatch = null;
+        _ourLatch = null;
     }
 
     protected boolean isWaitingLatch() {
-        return _yourLatch != null;
+        return _ourLatch != null;
     }
 
     protected long actuallyGetCount(CountDownLatch latch) {
@@ -95,16 +95,16 @@ public class ThreadFireLatch {
     }
 
     public synchronized void reset() {
-        if (_yourLatch == null) {
+        if (_ourLatch == null) {
             return;
         }
-        final long count = _yourLatch.getCount();
+        final long count = _ourLatch.getCount();
         if (count > 0) {
             _logger.log("...Resetting your latch: count=" + count);
             for (int i = 0; i < count; i++) {
-                _yourLatch.countDown();
+                _ourLatch.countDown(); // is thread safe and allowed over count down
             }
         }
-        _yourLatch = null;
+        _ourLatch = null;
     }
 }

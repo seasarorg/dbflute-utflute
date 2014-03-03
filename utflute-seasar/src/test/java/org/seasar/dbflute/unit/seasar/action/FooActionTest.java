@@ -1,12 +1,25 @@
+/*
+ * Copyright 2004-2014 the Seasar Foundation and the Others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package org.seasar.dbflute.unit.seasar.action;
 
-import junit.framework.AssertionFailedError;
-
-import org.seasar.dbflute.unit.core.thread.ThreadFireExecution;
-import org.seasar.dbflute.unit.core.thread.ThreadFireOption;
-import org.seasar.dbflute.unit.core.thread.ThreadFireResource;
 import org.seasar.dbflute.unit.seasar.ContainerTestCase;
 
+/**
+ * @author jflute
+ */
 public class FooActionTest extends ContainerTestCase {
 
     public void test_inject_basic() throws Exception {
@@ -21,35 +34,5 @@ public class FooActionTest extends ContainerTestCase {
         log(action.transactionManager);
         assertNotNull(action.fooBhv);
         assertNotNull(action.transactionManager);
-    }
-
-    public void test_threadFire_expectSameResult_basic() throws Exception {
-        threadFire(new ThreadFireExecution<String>() {
-            public String execute(ThreadFireResource resource) {
-                return "foo";
-            }
-        }, new ThreadFireOption().expectSameResult()); // expect no exception
-    }
-
-    public void test_threadFire_expectSameResult_failure() throws Exception {
-        // ## Arrange ##
-        try {
-            // ## Act ##
-            threadFire(new ThreadFireExecution<String>() {
-                public String execute(ThreadFireResource resource) {
-                    if (resource.getThreadId() % 2 == 0) {
-                        return "foo";
-                    } else {
-                        return "bar";
-                    }
-                }
-            }, new ThreadFireOption().expectSameResult());
-
-            // ## Assert ##
-            fail();
-        } catch (AssertionFailedError e) {
-            // OK
-            log(e.getMessage());
-        }
     }
 }

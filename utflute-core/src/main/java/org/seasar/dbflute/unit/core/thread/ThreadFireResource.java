@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2013 the Seasar Foundation and the Others.
+ * Copyright 2004-2014 the Seasar Foundation and the Others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,18 @@ public class ThreadFireResource {
         _threadId = threadId;
         _parameter = parameter;
         _yourLatch = yourLatch;
+    }
+
+    // ===================================================================================
+    //                                                               Basic Thread Handling 
+    //                                                               =====================
+    public void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            String msg = "Failed to make a pit stop but I want to sleep here...Zzz...";
+            throw new IllegalStateException(msg, e);
+        }
     }
 
     // ===================================================================================

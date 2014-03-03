@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2013 the Seasar Foundation and the Others.
+ * Copyright 2004-2014 the Seasar Foundation and the Others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,16 +46,19 @@ public class ThreadFireLatch {
         final boolean last;
         synchronized (this) {
             latch = prepareLatch();
-            last = (doGetCount(latch) == 1);
+            last = (actuallyGetCount(latch) == 1);
             if (last) {
                 _logger.log("Ready...Go! (restart)");
                 clearLatch();
             }
-            doCountDown(latch); // ready go if last
+            actuallyCountDown(latch); // ready go if last
         }
         if (!last) {
-            _logger.log("...Awaiting other threads: count=" + doGetCount(latch));
-            doAwait(latch);
+            if (isWaitingLatch()) {
+                // to be exact, possible that threads after restart come here but no problem
+                _logger.log("...Awaiting other threads: count=" + actuallyGetCount(latch));
+                actuallyAwait(latch);
+            }
         }
     }
 
@@ -70,15 +73,19 @@ public class ThreadFireLatch {
         _yourLatch = null;
     }
 
-    protected long doGetCount(CountDownLatch latch) {
+    protected boolean isWaitingLatch() {
+        return _yourLatch != null;
+    }
+
+    protected long actuallyGetCount(CountDownLatch latch) {
         return latch.getCount();
     }
 
-    protected void doCountDown(CountDownLatch latch) {
+    protected void actuallyCountDown(CountDownLatch latch) {
         latch.countDown();
     }
 
-    protected void doAwait(CountDownLatch latch) {
+    protected void actuallyAwait(CountDownLatch latch) {
         try {
             latch.await();
         } catch (InterruptedException e) {

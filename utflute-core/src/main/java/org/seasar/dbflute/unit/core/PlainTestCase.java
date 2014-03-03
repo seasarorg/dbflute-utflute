@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2013 the Seasar Foundation and the Others.
+ * Copyright 2004-2014 the Seasar Foundation and the Others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,10 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.seasar.dbflute.AccessContext;
 import org.seasar.dbflute.cbean.PagingResultBean;
+import org.seasar.dbflute.unit.core.cannonball.CannonballDirector;
+import org.seasar.dbflute.unit.core.cannonball.CannonballOption;
+import org.seasar.dbflute.unit.core.cannonball.CannonballRun;
+import org.seasar.dbflute.unit.core.cannonball.CannonballStaff;
 import org.seasar.dbflute.unit.core.thread.ThreadFireExecution;
 import org.seasar.dbflute.unit.core.thread.ThreadFireHelper;
 import org.seasar.dbflute.unit.core.thread.ThreadFireMan;
@@ -428,12 +432,69 @@ public abstract class PlainTestCase extends TestCase {
     }
 
     // ===================================================================================
+    //                                                                         Cannon-ball
+    //                                                                         ===========
+    /**
+     * Execute the cannon-ball run. (Do you know cannon-ball run?) <br />
+     * Default thread count is 10, and repeat count is 1.
+     * <pre>
+     * cannonball(new CannonballRun() {
+     *     public void drive(CannonballCar car) {
+     *         ...
+     *     }
+     * }, new CannonballOption().expect...);
+     * @param run The callback for the run. (NotNull)
+     * @param option The option for the run. (NotNull)
+     */
+    protected void cannonball(CannonballRun run, CannonballOption option) {
+        final CannonballDirector director = new CannonballDirector(new CannonballStaff() {
+            public TransactionResource help_beginTransaction() {
+                return beginNewTransaction();
+            }
+
+            public void help_prepareAccessContext() {
+                xprepareAccessContext();
+            }
+
+            public void help_clearAccessContext() {
+                xclearAccessContext();
+            }
+
+            public void help_assertEquals(Object expected, Object actual) {
+                assertEquals(expected, actual);
+            }
+
+            public void help_fail(String msg) {
+                fail(msg);
+            }
+
+            public void help_log(Object... msgs) {
+                log(msgs);
+            }
+
+            public String help_ln() {
+                return ln();
+            }
+        });
+        director.readyGo(run, option);
+    }
+
+    // ===================================================================================
     //                                                                         Thread Fire
     //                                                                         ===========
+    /**
+     * @param execution
+     * @deprecated use cannonball()
+     */
     protected <RESULT> void threadFire(ThreadFireExecution<RESULT> execution) {
         threadFire(execution, new ThreadFireOption());
     }
 
+    /**
+     * @param execution
+     * @param option
+     * @deprecated use cannonball()
+     */
     protected <RESULT> void threadFire(ThreadFireExecution<RESULT> execution, ThreadFireOption option) {
         final ThreadFireMan fireMan = new ThreadFireMan(new ThreadFireHelper() {
             public TransactionResource help_beginTransaction() {

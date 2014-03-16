@@ -15,6 +15,7 @@
  */
 package org.seasar.dbflute.unit.core;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.seasar.dbflute.unit.core.binding.BoundResult;
@@ -36,13 +37,22 @@ public abstract class InjectionTestCase extends PlainTestCase {
     //                                    Transaction Object
     //                                    ------------------
     /** The object that has transaction resources for test case. */
-    private TransactionResource _testCaseTransactionResource;
+    protected TransactionResource _xtestCaseTransactionResource;
 
     // -----------------------------------------------------
     //                                     Component Binding
     //                                     -----------------
-    private final ComponentBinder _testCaseComponentBinder = xcreateTestCaseComponentBinder();
-    private BoundResult _testCaseBoundResult;
+    /** The binder of component for the test case. (NotNull) */
+    protected final ComponentBinder _xtestCaseComponentBinder = xcreateTestCaseComponentBinder();
+
+    /** The result of bound component for the test case. (NullAllowed: before binding, after destroy) */
+    protected BoundResult _xtestCaseBoundResult;
+
+    /** The list of mock instance injected to component. (NullAllowed: when no mock) */
+    protected List<Object> _xmockInstanceList; // lazy-loaded
+
+    /** The list of non-binding type NOT injected to component. (NullAllowed: when no mock) */
+    protected List<Class<?>> _xnonBindingTypeList; // lazy-loaded
 
     // ===================================================================================
     //                                                                            Settings
@@ -61,22 +71,30 @@ public abstract class InjectionTestCase extends PlainTestCase {
 
     protected abstract void xprepareTestCaseContainer();
 
-    protected boolean isUseOneTimeContainer() {
+    /**
+     * Does it use one-time container? (re-initialize container per one test case?)
+     * @return The determination, true or false.
+     */
+    protected boolean isUseOneTimeContainer() { // customize point
         return false;
     }
 
     protected void xprepareTestCaseComponent() {
-        _testCaseBoundResult = _testCaseComponentBinder.bindComponent(this);
+        _xtestCaseBoundResult = _xtestCaseComponentBinder.bindComponent(this);
     }
 
     protected void xbeginTestCaseTransaction() {
         if (isSuppressTestCaseTransaction()) {
             return;
         }
-        _testCaseTransactionResource = beginNewTransaction();
+        _xtestCaseTransactionResource = beginNewTransaction();
     }
 
-    protected boolean isSuppressTestCaseTransaction() { // option by overriding
+    /**
+     * Does it suppress transaction for the test case? (non-transaction as default?)
+     * @return The determination, true or false.
+     */
+    protected boolean isSuppressTestCaseTransaction() { // customize point
         return false; // default is to use the transaction
     }
 
@@ -85,6 +103,8 @@ public abstract class InjectionTestCase extends PlainTestCase {
         xrollbackTestCaseTransaction();
         xdestroyTestCaseComponent();
         xdestroyTestCaseContainer();
+        _xmockInstanceList = null;
+        _xnonBindingTypeList = null;
         super.tearDown();
     }
 
@@ -93,17 +113,24 @@ public abstract class InjectionTestCase extends PlainTestCase {
             return;
         }
         if (isCommitTestCaseTransaction()) {
-            commitTransaction(_testCaseTransactionResource);
+            commitTransaction(_xtestCaseTransactionResource);
         } else {
-            rollbackTransaction(_testCaseTransactionResource);
+            rollbackTransaction(_xtestCaseTransactionResource);
         }
-        _testCaseTransactionResource = null;
+        _xtestCaseTransactionResource = null;
     }
 
-    protected boolean isCommitTestCaseTransaction() {
+    /**
+     * Does it commit transaction for the test case? (commit updated data?)
+     * @return The determination, true or false.
+     */
+    protected boolean isCommitTestCaseTransaction() { // customize point
         return false; // default is to roll-back always
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void commitTransaction(TransactionResource resource) { // user method
         xassertTransactionResourceNotNull(resource);
@@ -115,6 +142,9 @@ public abstract class InjectionTestCase extends PlainTestCase {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void rollbackTransaction(TransactionResource resource) { // user method
         xassertTransactionResourceNotNull(resource);
@@ -127,8 +157,8 @@ public abstract class InjectionTestCase extends PlainTestCase {
     }
 
     protected void xdestroyTestCaseComponent() {
-        _testCaseComponentBinder.unbindComponent(this, _testCaseBoundResult);
-        _testCaseBoundResult = null;
+        _xtestCaseComponentBinder.unbindComponent(this, _xtestCaseBoundResult);
+        _xtestCaseBoundResult = null;
     }
 
     protected void xdestroyTestCaseContainer() {
@@ -138,7 +168,11 @@ public abstract class InjectionTestCase extends PlainTestCase {
         }
     }
 
-    protected boolean isDestroyContainerAtTearDown() { // option by overriding
+    /**
+     * Does it destroy container instance at tear-down? (next test uses new-created container?)
+     * @return The determination, true or false.
+     */
+    protected boolean isDestroyContainerAtTearDown() { // customize point
         return false; // default is to cache the instance
     }
 
@@ -179,40 +213,95 @@ public abstract class InjectionTestCase extends PlainTestCase {
     }
 
     /**
+     * Register the mock instance for injection.
+     * <pre>
+     * FooAction action = new FooAction();
+     * <span style="color: #FD4747">registerMockInstance</span>(new FooBhv());
+     * inject(action); <span style="color: #3F7E5E">// the new-created behavior is injected</span>
+     * </pre>
+     * @param mock The mock instance injected to component. (NotNull)
+     */
+    public void registerMockInstance(Object mock) { // user method
+        assertNotNull(mock);
+        if (_xmockInstanceList == null) {
+            _xmockInstanceList = new ArrayList<Object>();
+        }
+        _xmockInstanceList.add(mock);
+    }
+
+    /**
+     * Suppress the binding of the type for injection.
+     * <pre>
+     * FooAction action = new FooAction();
+     * <span style="color: #FD4747">suppressBindingOf</span>(FooBhv.class);
+     * inject(action); <span style="color: #3F7E5E">// not injected about the behavior type</span>
+     * </pre>
+     * @param nonBindingType The non-binding type NOT injected to component. (NotNull)
+     */
+    public void suppressBindingOf(Class<?> nonBindingType) { // user method
+        assertNotNull(nonBindingType);
+        if (_xnonBindingTypeList == null) {
+            _xnonBindingTypeList = new ArrayList<Class<?>>();
+        }
+        _xnonBindingTypeList.add(nonBindingType);
+    }
+
+    /**
      * Inject dependencies for the bean.
      * <pre>
      * FooAction action = new FooAction();
-     * inject(action);
+     * <span style="color: #FD4747">inject</span>(action);
+     * 
+     * action.submit();
+     * ...
      * </pre>
      * @param bean The instance of bean. (NotNull)
      * @return The information of bound result. (NotNull)
      */
     protected BoundResult inject(Object bean) { // user method
-        return xdoInject(bean, xcreateOuterComponentBinder());
+        return xdoInject(bean, xcreateOuterComponentBinder(bean));
     }
 
-    protected ComponentBinder xcreateOuterComponentBinder() { // customize point
+    protected ComponentBinder xcreateOuterComponentBinder(Object bean) { // customize point
         final ComponentBinder componentBinder = createBasicComponentBinder();
         componentBinder.suppressPrivateBinding();
         // adjust mock components
         final List<Object> mockInstanceList = newArrayList();
+        if (_xmockInstanceList != null) {
+            mockInstanceList.addAll(_xmockInstanceList);
+        }
         prepareMockInstance(mockInstanceList);
         for (Object mockInstance : mockInstanceList) {
+            if (mockInstance == bean) { // check instance so uses '=='
+                continue;
+            }
+            inject(mockInstance);
             componentBinder.addMockInstance(mockInstance);
         }
         // adjust no binding components
-        final List<Class<?>> noBindingTypeList = newArrayList();
-        prepareNoBindingType(noBindingTypeList);
-        for (Class<?> noBindingType : noBindingTypeList) {
-            componentBinder.addNoBindingType(noBindingType);
+        final List<Class<?>> nonBindingTypeList = newArrayList();
+        if (_xnonBindingTypeList != null) {
+            nonBindingTypeList.addAll(_xnonBindingTypeList);
+        }
+        prepareNoBindingType(nonBindingTypeList);
+        for (Class<?> nonBindingType : nonBindingTypeList) {
+            componentBinder.addNonBindingType(nonBindingType);
         }
         return componentBinder;
     }
 
+    /**
+     * @param mockInstanceList The list of mock instance. (NotNull)
+     * @deprecated You can use registerMockInstance().
+     */
     protected void prepareMockInstance(List<Object> mockInstanceList) { // option by overriding
     }
 
-    protected void prepareNoBindingType(List<Class<?>> noBindTypeList) { // option by overriding
+    /**
+     * @param nonBindingTypeList The list of non-binding type. (NotNull)
+     * @deprecated You can suppressBindingOf().
+     */
+    protected void prepareNoBindingType(List<Class<?>> nonBindingTypeList) { // option by overriding
     }
 
     protected BoundResult xdoInject(Object bean, ComponentBinder componentBinder) {
@@ -224,11 +313,31 @@ public abstract class InjectionTestCase extends PlainTestCase {
     //                                                                  ==================
     protected abstract void xdestroyContainer();
 
+    /**
+     * Get component from DI container for the type.
+     * @param type The type of component to find. (NotNull)
+     * @return The instance of the component. (NotNull: if not found, throws exception)
+     */
     protected abstract <COMPONENT> COMPONENT getComponent(Class<COMPONENT> type); // user method
 
+    /**
+     * Get component from DI container for the name.
+     * @param name The name of component to find. (NotNull)
+     * @return The instance of the component. (NotNull: if not found, throws exception)
+     */
     protected abstract <COMPONENT> COMPONENT getComponent(String name); // user method
 
+    /**
+     * Does it have the component on the DI container for the type.
+     * @param type The type of component to find. (NotNull)
+     * @return The determination, true or false.
+     */
     protected abstract boolean hasComponent(Class<?> type); // user method
 
+    /**
+     * Does it have the component on the DI container for the name.
+     * @param name The name of component to find. (NotNull)
+     * @return The determination, true or false.
+     */
     protected abstract boolean hasComponent(String name); // user method
 }

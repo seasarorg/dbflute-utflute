@@ -34,23 +34,32 @@ public abstract class ContainerTestCase extends SpringTestCase {
     // ===================================================================================
     //                                                                           Attribute
     //                                                                           =========
-    private DataSource _dataSource;
+    /** The data source for database. (NotNull: after injection) */
+    protected DataSource _xdataSource;
 
     // ===================================================================================
     //                                                                         JDBC Helper
     //                                                                         ===========
+    /**
+     * Get the data source for database. (actually wrapped)
+     * @return The instance from DI container. (NotNull)
+     */
     protected DataSource getDataSource() { // user method
         // same way as DBFlute does because it may use, e.g. Commons DBCP
         final SpringTransactionalDataSourceHandler handler = new SpringTransactionalDataSourceHandler();
-        return new HandlingDataSourceWrapper(_dataSource, new DataSourceHandler() {
+        return new HandlingDataSourceWrapper(_xdataSource, new DataSourceHandler() {
             public Connection getConnection(DataSource dataSource) throws SQLException {
                 return handler.getConnection(dataSource);
             }
         });
     }
 
+    /**
+     * Get the plain (non-wrapped) data source for database.
+     * @return The instance from DI container. (NotNull)
+     */
     protected DataSource doGetDataSourcePlainly() {
-        return _dataSource;
+        return _xdataSource;
     }
 
     protected static class SpringTransactionalDataSourceHandler implements DataSourceHandler {

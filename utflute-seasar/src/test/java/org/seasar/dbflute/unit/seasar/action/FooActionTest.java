@@ -16,6 +16,7 @@
 package org.seasar.dbflute.unit.seasar.action;
 
 import org.seasar.dbflute.unit.seasar.ContainerTestCase;
+import org.seasar.dbflute.unit.seasar.dbflute.exbhv.FooBhv;
 
 /**
  * @author jflute
@@ -34,5 +35,23 @@ public class FooActionTest extends ContainerTestCase {
         log(action.transactionManager);
         assertNotNull(action.fooBhv);
         assertNotNull(action.transactionManager);
+    }
+
+    public void test_inject_mockInstance() throws Exception {
+        // ## Arrange ##
+        FooAction action = new FooAction();
+        FooBhv mock = new FooBhv();
+        registerMockInstance(mock);
+
+        // ## Act ##
+        inject(action);
+
+        // ## Assert ##
+        log(action.fooBhv);
+        log(action.transactionManager);
+        assertNotNull(action.fooBhv);
+        assertNotNull(action.transactionManager);
+        assertNotNull(action.fooBhv.getTransactionManager());
+        assertSame(mock, action.fooBhv);
     }
 }

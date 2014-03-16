@@ -12,4 +12,8 @@ public class FooBhv {
 
     @Binding
     protected TransactionManager transactionManager;
+
+    public TransactionManager getTransactionManager() {
+        return transactionManager;
+    }
 }

@@ -52,7 +52,8 @@ public abstract class SeasarTestCase extends InjectionTestCase {
     // -----------------------------------------------------
     //                                      Container Object
     //                                      ----------------
-    private static String _preparedConfigFile; // static cache: null means beginning or test execution
+    /** The cached configuration file for DI container. (NullAllowed: null means beginning or test execution) */
+    protected static String _xpreparedConfigFile;
 
     // ===================================================================================
     //                                                                            Settings
@@ -76,21 +77,25 @@ public abstract class SeasarTestCase extends InjectionTestCase {
         }
         final String configFile = prepareConfigFile();
         if (xisInitializedContainer()) {
-            if (configFile.equals(_preparedConfigFile)) { // no change
+            if (configFile.equals(_xpreparedConfigFile)) { // no change
                 return; // no need to initialize
             } else { // changed
                 xdestroyContainer(); // to re-initialize
             }
         }
         xinitializeContainer(configFile);
-        _preparedConfigFile = configFile;
+        _xpreparedConfigFile = configFile;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     protected boolean isUseOneTimeContainer() {
         return false;
     }
 
     /**
+     * Prepare configuration file as root for Seasar.
      * @return The pure file name of root dicon. (NotNull)
      */
     protected String prepareConfigFile() { // customize point
@@ -99,12 +104,15 @@ public abstract class SeasarTestCase extends InjectionTestCase {
 
     @Override
     protected void xclearCachedContainer() {
-        _preparedConfigFile = null;
+        _xpreparedConfigFile = null;
     }
 
     // ===================================================================================
     //                                                                         Transaction
     //                                                                         ===========
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected TransactionResource beginNewTransaction() { // user method
         final TransactionManager manager = getComponent(TransactionManager.class);
@@ -184,6 +192,10 @@ public abstract class SeasarTestCase extends InjectionTestCase {
         }
     }
 
+    /**
+     * Does it suppress web mock? e.g. HttpServletRequest, HttpSession
+     * @return The determination, true or false.
+     */
     protected boolean isSuppressWebMock() {
         return false;
     }
@@ -251,15 +263,24 @@ public abstract class SeasarTestCase extends InjectionTestCase {
     // -----------------------------------------------------
     //                                             Component
     //                                             ---------
+    /**
+     * {@inheritDoc}
+     */
     protected <COMPONENT> COMPONENT getComponent(Class<COMPONENT> type) { // user method
         return SingletonS2Container.getComponent(type);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @SuppressWarnings("unchecked")
     protected <COMPONENT> COMPONENT getComponent(String name) { // user method
         return (COMPONENT) SingletonS2Container.getComponent(name);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     protected boolean hasComponent(Class<?> type) { // user method
         try {
             SingletonS2Container.getComponent(type);
@@ -271,6 +292,9 @@ public abstract class SeasarTestCase extends InjectionTestCase {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     protected boolean hasComponent(String name) { // user method
         try {
             SingletonS2Container.getComponent(name);

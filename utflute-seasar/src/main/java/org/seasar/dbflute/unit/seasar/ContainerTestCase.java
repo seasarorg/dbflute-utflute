@@ -26,16 +26,25 @@ public abstract class ContainerTestCase extends SeasarTestCase {
     // ===================================================================================
     //                                                                           Attribute
     //                                                                           =========
-    private DataSource _dataSource;
+    /** The data source for database. (NotNull: after injection) */
+    protected DataSource _xdataSource;
 
     // ===================================================================================
     //                                                                         JDBC Helper
     //                                                                         ===========
+    /**
+     * Get the data source for database. (actually non-wrapped)
+     * @return The instance from DI container. (NotNull)
+     */
     protected DataSource getDataSource() { // user method
-        return _dataSource;
+        return _xdataSource;
     }
 
+    /**
+     * Get the plain (non-wrapped) data source for database.
+     * @return The instance from DI container. (NotNull)
+     */
     protected DataSource doGetDataSourcePlainly() {
-        return _dataSource;
+        return _xdataSource;
     }
 }

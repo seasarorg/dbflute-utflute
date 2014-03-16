@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -37,6 +38,8 @@ import org.seasar.dbflute.unit.core.cannonball.CannonballDirector;
 import org.seasar.dbflute.unit.core.cannonball.CannonballOption;
 import org.seasar.dbflute.unit.core.cannonball.CannonballRun;
 import org.seasar.dbflute.unit.core.cannonball.CannonballStaff;
+import org.seasar.dbflute.unit.core.mark.TraceMarkInfo;
+import org.seasar.dbflute.unit.core.mark.TraceMarkManager;
 import org.seasar.dbflute.unit.core.thread.ThreadFireExecution;
 import org.seasar.dbflute.unit.core.thread.ThreadFireHelper;
 import org.seasar.dbflute.unit.core.thread.ThreadFireMan;
@@ -57,8 +60,17 @@ public abstract class PlainTestCase extends TestCase {
     // ===================================================================================
     //                                                                          Definition
     //                                                                          ==========
-    /** Log instance for sub class. */
-    private final Logger _logger = Logger.getLogger(getClass());
+    /** Log instance for sub class. (NotNull) */
+    protected final Logger _xlogger = Logger.getLogger(getClass());
+
+    // ===================================================================================
+    //                                                                           Attribute
+    //                                                                           =========
+    /** The map of mark to assert that it goes through the road. (NullAllowed: when no mark) */
+    protected Map<String, TraceMarkInfo> _xmarkMap; // lazy-loaded
+
+    /** The manager of trace mark. (NotNull) */
+    protected final TraceMarkManager _xtraceMarkManager = new TraceMarkManager();
 
     // ===================================================================================
     //                                                                            Settings
@@ -73,6 +85,7 @@ public abstract class PlainTestCase extends TestCase {
     protected void tearDown() throws Exception {
         super.tearDown();
         xclearAccessContext();
+        xclearMarkMap();
     }
 
     protected void xprepareAccessContext() {
@@ -84,12 +97,24 @@ public abstract class PlainTestCase extends TestCase {
         AccessContext.setAccessContextOnThread(context);
     }
 
+    /**
+     * Get the access context for common column auto setup of DBFlute.
+     * @return The instance of access context on the thread. (basically NotNull)
+     */
     protected AccessContext getAccessContext() { // user method
         return AccessContext.getAccessContextOnThread();
     }
 
     protected void xclearAccessContext() {
         AccessContext.clearAccessContextOnThread();
+    }
+
+    protected void xclearMarkMap() {
+        if (_xmarkMap != null) {
+            _xtraceMarkManager.checkNonAssertedMark(_xmarkMap);
+            _xmarkMap.clear();
+            _xmarkMap = null;
+        }
     }
 
     // ===================================================================================
@@ -150,10 +175,132 @@ public abstract class PlainTestCase extends TestCase {
     }
 
     // -----------------------------------------------------
+    //                                                String
+    //                                                ------
+    /**
+     * Assert that the string contains the keyword.
+     * <pre>
+     * String str = "foo";
+     * assertContains(str, "fo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "oo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "foo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "Foo"); <span style="color: #3F7E5E">// false</span>
+     * </pre>
+     * @param str The string to assert. (NotNull)
+     * @param keyword The keyword string. (NotNull) 
+     */
+    protected void assertContains(String str, String keyword) {
+        if (!DfStringUtil.contains(str, keyword)) {
+            fail("the string should have the keyword but not found: " + keyword);
+        }
+    }
+
+    /**
+     * Assert that the string contains the keyword. (ignore case)
+     * <pre>
+     * String str = "foo";
+     * assertContains(str, "fo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "oo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "foo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "Foo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "ux"); <span style="color: #3F7E5E">// false</span>
+     * </pre>
+     * @param str The string to assert. (NotNull)
+     * @param keyword The keyword string. (NotNull) 
+     */
+    protected void assertContainsIgnoreCase(String str, String keyword) {
+        if (!DfStringUtil.containsIgnoreCase(str, keyword)) {
+            fail("the string should have the keyword but not found: " + keyword);
+        }
+    }
+
+    /**
+     * Assert that the string contains all keywords.
+     * <pre>
+     * String str = "foo";
+     * assertContains(str, "fo", "oo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "f", "foo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "f", "Foo"); <span style="color: #3F7E5E">// false</span>
+     * assertContains(str, "fx", "oo"); <span style="color: #3F7E5E">// false</span>
+     * </pre>
+     * @param str The string to assert. (NotNull)
+     * @param keywords The array of keyword string. (NotNull) 
+     */
+    protected void assertContainsAll(String str, String... keywords) {
+        if (!DfStringUtil.containsAll(str, keywords)) {
+            fail("the string should have all keywords but not found: " + newArrayList(keywords));
+        }
+    }
+
+    /**
+     * Assert that the string contains all keywords. (ignore case)
+     * <pre>
+     * String str = "foo";
+     * assertContains(str, "fo", "oo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "f", "foo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "f", "Foo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "fx", "oo"); <span style="color: #3F7E5E">// false</span>
+     * </pre>
+     * @param str The string to assert. (NotNull)
+     * @param keywords The array of keyword string. (NotNull) 
+     */
+    protected void assertContainsAllIgnoreCase(String str, String... keywords) {
+        if (!DfStringUtil.containsAllIgnoreCase(str, keywords)) {
+            fail("the string should have all keywords but not found: " + newArrayList(keywords));
+        }
+    }
+
+    /**
+     * Assert that the string contains any keyword.
+     * <pre>
+     * String str = "foo";
+     * assertContains(str, "fo", "oo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "f", "foo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "f", "qux"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "F", "qux"); <span style="color: #3F7E5E">// false</span>
+     * assertContains(str, "fx", "ux"); <span style="color: #3F7E5E">// false</span>
+     * </pre>
+     * @param str The string to assert. (NotNull)
+     * @param keywords The array of keyword string. (NotNull) 
+     */
+    protected void assertContainsAny(String str, String... keywords) {
+        if (!DfStringUtil.containsAny(str, keywords)) {
+            fail("the string should have any keyword but not found: " + newArrayList(keywords));
+        }
+    }
+
+    /**
+     * Assert that the string contains any keyword. (ignore case)
+     * <pre>
+     * String str = "foo";
+     * assertContains(str, "fo", "oo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "f", "foo"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "f", "qux"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "F", "qux"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "fx", "ux"); <span style="color: #3F7E5E">// false</span>
+     * </pre>
+     * @param str The string to assert. (NotNull)
+     * @param keywords The array of keyword string. (NotNull) 
+     */
+    protected void assertContainsAnyIgnoreCase(String str, String... keywords) {
+        if (!DfStringUtil.containsAnyIgnoreCase(str, keywords)) {
+            fail("the string should have any keyword but not found: " + newArrayList(keywords));
+        }
+    }
+
+    // -----------------------------------------------------
     //                                                  List
     //                                                  ----
     /**
      * Assert that the list has an element containing the keyword.
+     * <pre>
+     * List&lt;String&gt; strList = ...; <span style="color: #3F7E5E">// [foo, bar]</span>
+     * assertContainsKeyword(strList, "fo"); <span style="color: #3F7E5E">// true</span>
+     * assertContainsKeyword(strList, "ar"); <span style="color: #3F7E5E">// true</span>
+     * assertContainsKeyword(strList, "foo"); <span style="color: #3F7E5E">// true</span>
+     * assertContainsKeyword(strList, "Foo"); <span style="color: #3F7E5E">// false</span>
+     * assertContainsKeyword(strList, "ux"); <span style="color: #3F7E5E">// false</span>
+     * </pre>
      * @param strList The list of string. (NotNull)
      * @param keyword The keyword string. (NotNull) 
      */
@@ -163,24 +310,69 @@ public abstract class PlainTestCase extends TestCase {
         }
     }
 
+    /**
+     * Assert that the list has an element containing all keywords.
+     * <pre>
+     * List&lt;String&gt; strList = ...; <span style="color: #3F7E5E">// [foo, bar]</span>
+     * assertContainsKeyword(strList, "fo", "ar", "foo"); <span style="color: #3F7E5E">// true</span>
+     * assertContainsKeyword(strList, "fo", "ar", "Foo"); <span style="color: #3F7E5E">// false</span>
+     * assertContainsKeyword(strList, "fo", "ux", "foo"); <span style="color: #3F7E5E">// false</span>
+     * </pre>
+     * @param strList The list of string. (NotNull)
+     * @param keywords The array of keyword string. (NotNull) 
+     */
     protected void assertContainsKeywordAll(Collection<String> strList, String... keywords) {
         if (!DfStringUtil.containsKeywordAll(newArrayList(strList), keywords)) {
             fail("the list should have all keywords but not found: " + newArrayList(keywords));
         }
     }
 
+    /**
+     * Assert that the list has an element containing all keywords. (ignore case)
+     * <pre>
+     * List&lt;String&gt; strList = ...; <span style="color: #3F7E5E">// [foo, bar]</span>
+     * assertContainsKeyword(strList, "fo", "ar", "foo"); <span style="color: #3F7E5E">// true</span>
+     * assertContainsKeyword(strList, "fO", "ar", "Foo"); <span style="color: #3F7E5E">// true</span>
+     * assertContainsKeyword(strList, "fo", "ux", "foo"); <span style="color: #3F7E5E">// false</span>
+     * </pre>
+     * @param strList The list of string. (NotNull)
+     * @param keywords The array of keyword string. (NotNull) 
+     */
     protected void assertContainsKeywordAllIgnoreCase(Collection<String> strList, String... keywords) {
         if (!DfStringUtil.containsKeywordAllIgnoreCase(newArrayList(strList), keywords)) {
             fail("the list should have all keywords (case ignored) but not found: " + newArrayList(keywords));
         }
     }
 
+    /**
+     * Assert that the list has an element containing any keyword.
+     * <pre>
+     * List&lt;String&gt; strList = ...; <span style="color: #3F7E5E">// [foo, bar]</span>
+     * assertContainsKeyword(strList, "fo", "ar", "foo"); <span style="color: #3F7E5E">// true</span>
+     * assertContainsKeyword(strList, "fo", "ux", "qux"); <span style="color: #3F7E5E">// true</span>
+     * assertContainsKeyword(strList, "Fo", "ux", "qux"); <span style="color: #3F7E5E">// false</span>
+     * </pre>
+     * @param strList The list of string. (NotNull)
+     * @param keywords The array of keyword string. (NotNull) 
+     */
     protected void assertContainsKeywordAny(Collection<String> strList, String... keywords) {
         if (!DfStringUtil.containsKeywordAny(newArrayList(strList), keywords)) {
             fail("the list should have any keyword but not found: " + newArrayList(keywords));
         }
     }
 
+    /**
+     * Assert that the list has an element containing any keyword. (ignore case)
+     * <pre>
+     * List&lt;String&gt; strList = ...; <span style="color: #3F7E5E">// [foo, bar]</span>
+     * assertContainsKeyword(strList, "fo", "ar", "foo"); <span style="color: #3F7E5E">// true</span>
+     * assertContainsKeyword(strList, "fo", "ux", "qux"); <span style="color: #3F7E5E">// true</span>
+     * assertContainsKeyword(strList, "Fo", "ux", "qux"); <span style="color: #3F7E5E">// true</span>
+     * assertContainsKeyword(strList, "po", "ux", "qux"); <span style="color: #3F7E5E">// false</span>
+     * </pre>
+     * @param strList The list of string. (NotNull)
+     * @param keywords The array of keyword string. (NotNull) 
+     */
     protected void assertContainsKeywordAnyIgnoreCase(Collection<String> strList, String... keywords) {
         if (!DfStringUtil.containsKeywordAnyIgnoreCase(newArrayList(strList), keywords)) {
             fail("the list should have any keyword (case ignored) but not found: " + newArrayList(keywords));
@@ -233,6 +425,61 @@ public abstract class PlainTestCase extends TestCase {
         }
     }
 
+    // -----------------------------------------------------
+    //                                             Mark Here
+    //                                             ---------
+    /**
+     * Mark here to assert that it goes through the road.
+     * <pre>
+     * final String mark = "cursor";
+     * MemberCB cb = new MemberCB();
+     * memberBhv.selectCursor(cb, entity -&gt; {
+     *     <span style="color: #FD4747">markHere</span>(mark);
+     * });
+     * assertMarked(mark); <span style="color: #3F7E5E">// the callback called</span>
+     * </pre>
+     * @param mark The your original mark expression as string. (NotNull)
+     */
+    protected void markHere(String mark) {
+        assertNotNull(mark);
+        if (_xmarkMap == null) {
+            _xmarkMap = new LinkedHashMap<String, TraceMarkInfo>();
+        }
+        TraceMarkInfo info = _xmarkMap.get(mark);
+        if (info == null) {
+            info = new TraceMarkInfo();
+            _xmarkMap.put(mark, info);
+            info.setMark(mark);
+        }
+        info.incrementCount();
+        _xmarkMap.put(mark, info);
+    }
+
+    /**
+     * Assert the mark is marked. (found in existing marks)
+     * <pre>
+     * final String mark = "cursor";
+     * MemberCB cb = new MemberCB();
+     * memberBhv.selectCursor(cb, entity -&gt; {
+     *     markHere(mark);
+     * });
+     * <span style="color: #FD4747">assertMarked</span>(mark); <span style="color: #3F7E5E">// the callback called</span>
+     * </pre>
+     * @param mark The your original mark expression as string. (NotNull)
+     */
+    protected void assertMarked(String mark) {
+        _xtraceMarkManager.assertMarked(_xmarkMap, mark);
+    }
+
+    /**
+     * Is the mark marked? (found the mark in existing marks?)
+     * @param mark The your original mark expression as string. (NotNull)
+     * @return The determination, true or false.
+     */
+    protected boolean isMarked(String mark) {
+        return _xmarkMap != null && _xmarkMap.get(mark) != null;
+    }
+
     // ===================================================================================
     //                                                                      Logging Helper
     //                                                                      ==============
@@ -283,7 +530,7 @@ public abstract class PlainTestCase extends TestCase {
             sb.append(appended);
             ++index;
         }
-        _logger.log(PlainTestCase.class.getName(), Level.DEBUG, sb.toString(), cause);
+        _xlogger.log(PlainTestCase.class.getName(), Level.DEBUG, sb.toString(), cause);
     }
 
     // ===================================================================================
@@ -438,9 +685,9 @@ public abstract class PlainTestCase extends TestCase {
      * Execute the cannon-ball run. (Do you know cannon-ball run?) <br />
      * Default thread count is 10, and repeat count is 1.
      * <pre>
-     * cannonball(new CannonballRun() {
+     * <span style="color: #FD4747">cannonball</span>(new CannonballRun() {
      *     public void drive(CannonballCar car) {
-     *         ...
+     *         ... <span style="color: #3F7E5E">// 10 threads is running at the same time</span>
      *     }
      * }, new CannonballOption().expect...);
      * @param run The callback for the run. (NotNull)
@@ -484,7 +731,7 @@ public abstract class PlainTestCase extends TestCase {
     //                                                                         ===========
     // not deprecated for now (only treated as old style in comment)
     /**
-     * Its's old style. Use cannonball()
+     * It's old style. You can use cannonball().
      * @param execution The execution of thread-fire
      */
     protected <RESULT> void threadFire(ThreadFireExecution<RESULT> execution) {
@@ -492,7 +739,7 @@ public abstract class PlainTestCase extends TestCase {
     }
 
     /**
-     * Its's old style. Use cannonball()
+     * It's old style. You can use cannonball().
      * @param execution The execution of thread-fire
      * @param option The option of thread-fire
      */
@@ -554,9 +801,17 @@ public abstract class PlainTestCase extends TestCase {
         return null;
     }
 
+    /**
+     * Commit the specified transaction.
+     * @param resource The resource of transaction provided by beginNewTransaction(). (NotNull)
+     */
     protected void commitTransaction(TransactionResource resource) {
     }
 
+    /**
+     * Roll-back the specified transaction.
+     * @param resource The resource of transaction provided by beginNewTransaction(). (NotNull)
+     */
     protected void rollbackTransaction(TransactionResource resource) {
     }
 

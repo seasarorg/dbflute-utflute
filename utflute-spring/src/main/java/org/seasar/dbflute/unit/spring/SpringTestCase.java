@@ -45,14 +45,17 @@ public abstract class SpringTestCase extends InjectionTestCase {
     // -----------------------------------------------------
     //                                          Static Cache
     //                                          ------------
-    private static String[] _preparedConfigFiles;
-    private static ApplicationContext _cachedApplicationContext;
+    /** The cached configuration files for DI container. (NullAllowed: null means beginning or test execution) */
+    protected static String[] _xpreparedConfigFiles;
+
+    /** The cached application context for DI container. (NullAllowed: null means beginning or test execution) */
+    protected static ApplicationContext _xcachedApplicationContext;
 
     // -----------------------------------------------------
     //                                         Spring Object
     //                                         -------------
     /** The current context of application. {Spring Object} */
-    private ApplicationContext _currentApplicationContext;
+    protected ApplicationContext _xcurrentApplicationContext;
 
     // ===================================================================================
     //                                                                            Settings
@@ -68,36 +71,48 @@ public abstract class SpringTestCase extends InjectionTestCase {
         final String[] configFiles = prepareConfigFiles();
         if (xisInitializedContainer()) { // already exists
             if (xisEqualWithPreparedConfigurations(configFiles)) { // no change
-                _currentApplicationContext = _cachedApplicationContext;
+                _xcurrentApplicationContext = _xcachedApplicationContext;
                 return; // no need to initialize
             } else { // changed
                 xdestroyContainer();
             }
         }
         xinitializeContainer(configFiles);
-        _preparedConfigFiles = configFiles;
+        _xpreparedConfigFiles = configFiles;
     }
 
     protected boolean xisEqualWithPreparedConfigurations(String[] configFiles) {
-        return configFiles != null && Arrays.asList(configFiles).equals(Arrays.asList(_preparedConfigFiles));
+        return configFiles != null && Arrays.asList(configFiles).equals(Arrays.asList(_xpreparedConfigFiles));
     }
 
+    /**
+     * Prepare configuration files for Spring Framework.
+     * @return The array of pure file name. (NotNull)
+     */
     protected String[] prepareConfigFiles() { // customize point
         return new String[] {}; // as default
     }
 
+    /**
+     * Create application context for Spring Framework.
+     * @param confs The array of configuration file names. (NotNull)
+     * @return The new-created instance of application context. (NotNull)
+     */
     protected ApplicationContext createApplicationContext(String[] confs) {
         return new ClassPathXmlApplicationContext(confs);
     }
 
     @Override
     protected void xclearCachedContainer() {
-        _cachedApplicationContext = null;
+        _xcachedApplicationContext = null;
     }
 
     // ===================================================================================
     //                                                                         Transaction
     //                                                                         ===========
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected TransactionResource beginNewTransaction() { // user method
         final String managerKey = "transactionManager";
@@ -115,29 +130,29 @@ public abstract class SpringTestCase extends InjectionTestCase {
     //                                                                     Spring Handling
     //                                                                     ===============
     protected boolean xisInitializedContainer() {
-        return _cachedApplicationContext != null;
+        return _xcachedApplicationContext != null;
     }
 
     protected void xinitializeContainer(String[] configFiles) {
         if (configFiles != null && configFiles.length > 0) {
-            _currentApplicationContext = new ClassPathXmlApplicationContext(configFiles);
+            _xcurrentApplicationContext = new ClassPathXmlApplicationContext(configFiles);
         } else {
             final BeanFactoryLocator locator = ContextSingletonBeanFactoryLocator.getInstance();
             final BeanFactoryReference ref = locator.useBeanFactory("context");
-            _currentApplicationContext = (ApplicationContext) ref.getFactory();
+            _xcurrentApplicationContext = (ApplicationContext) ref.getFactory();
         }
-        _cachedApplicationContext = _currentApplicationContext;
+        _xcachedApplicationContext = _xcurrentApplicationContext;
     }
 
     protected void xdestroyContainer() {
         xreleaseClassPathContext();
         xreleaseLocatorContextCache();
-        _currentApplicationContext = null;
-        _cachedApplicationContext = null;
+        _xcurrentApplicationContext = null;
+        _xcachedApplicationContext = null;
     }
 
     protected void xreleaseClassPathContext() {
-        final ApplicationContext cachedContext = _cachedApplicationContext;
+        final ApplicationContext cachedContext = _xcachedApplicationContext;
         if (cachedContext != null && cachedContext instanceof ClassPathXmlApplicationContext) {
             ((ClassPathXmlApplicationContext) cachedContext).destroy();
         }
@@ -151,15 +166,24 @@ public abstract class SpringTestCase extends InjectionTestCase {
         instances.clear();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     protected <COMPONENT> COMPONENT getComponent(Class<COMPONENT> type) { // user method
-        return _currentApplicationContext.getBean(type);
+        return _xcurrentApplicationContext.getBean(type);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @SuppressWarnings("unchecked")
     protected <COMPONENT> COMPONENT getComponent(String name) { // user method
-        return (COMPONENT) _currentApplicationContext.getBean(name);
+        return (COMPONENT) _xcurrentApplicationContext.getBean(name);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     protected boolean hasComponent(Class<?> type) { // user method
         try {
             getComponent(type);
@@ -169,6 +193,9 @@ public abstract class SpringTestCase extends InjectionTestCase {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     protected boolean hasComponent(String name) { // user method
         try {
             getComponent(name);

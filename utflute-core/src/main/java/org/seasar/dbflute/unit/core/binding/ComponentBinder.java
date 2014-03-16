@@ -28,12 +28,15 @@ import org.seasar.dbflute.util.DfCollectionUtil;
  */
 public class ComponentBinder {
 
+    // ===================================================================================
+    //                                                                           Attribute
+    //                                                                           =========
     protected final ComponentProvider _componentProvider;
     protected Class<?> _terminalSuperType;
     protected boolean _suppressPrivateBinding;
     protected boolean _limitBindBehaviorOnly;
     protected final List<Object> _mockInstanceList = DfCollectionUtil.newArrayList();
-    protected final List<Class<?>> _noBindingTypeList = DfCollectionUtil.newArrayList();
+    protected final List<Class<?>> _nonBindingTypeList = DfCollectionUtil.newArrayList();
 
     // ===================================================================================
     //                                                                         Constructor
@@ -65,12 +68,12 @@ public class ComponentBinder {
         _mockInstanceList.add(mockInstance);
     }
 
-    public void addNoBindingType(Class<?> noBindingType) {
-        if (noBindingType == null) {
-            String msg = "The argument 'noBindingType' should not be null.";
+    public void addNonBindingType(Class<?> nonBindingType) {
+        if (nonBindingType == null) {
+            String msg = "The argument 'nonBindingType' should not be null.";
             throw new IllegalArgumentException(msg);
         }
-        _noBindingTypeList.add(noBindingType);
+        _nonBindingTypeList.add(nonBindingType);
     }
 
     // ===================================================================================
@@ -102,16 +105,18 @@ public class ComponentBinder {
             return;
         }
         final Class<?> type = field.getType();
-        if (isNoBindingType(type)) {
+        if (isNonBindingType(type)) {
             return;
         }
         Object component = findMockInstance(type);
         if (component == null) {
-            final String name = normalizeAsPropertyName(field.getName());
             if (hasComponent(type)) {
                 component = getComponent(type);
-            } else if (hasComponent(name)) {
-                component = getComponent(name);
+            } else {
+                final String name = normalizeAsPropertyName(field.getName());
+                if (hasComponent(name)) {
+                    component = getComponent(name);
+                }
             }
         }
         if (component != null) {
@@ -120,10 +125,10 @@ public class ComponentBinder {
         }
     }
 
-    protected boolean isNoBindingType(Class<?> type) {
-        final List<Class<?>> noBindingTypeList = _noBindingTypeList;
-        for (Class<?> noBindingType : noBindingTypeList) {
-            if (noBindingType.isAssignableFrom(type)) {
+    protected boolean isNonBindingType(Class<?> type) {
+        final List<Class<?>> nonBindingTypeList = _nonBindingTypeList;
+        for (Class<?> nonBindingType : nonBindingTypeList) {
+            if (nonBindingType.isAssignableFrom(type)) {
                 return true;
             }
         }

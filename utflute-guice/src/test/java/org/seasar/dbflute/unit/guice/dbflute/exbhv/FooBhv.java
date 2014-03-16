@@ -28,4 +28,8 @@ public class FooBhv {
     public TransactionManager getTransactionManager() {
         return transactionManager;
     }
+
+    public void setTransactionManager(TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
 }

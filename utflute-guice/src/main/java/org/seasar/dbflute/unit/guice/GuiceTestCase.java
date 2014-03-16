@@ -15,8 +15,11 @@
  */
 package org.seasar.dbflute.unit.guice;
 
+import java.lang.annotation.Annotation;
 import java.util.List;
+import java.util.Set;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -33,6 +36,7 @@ import org.seasar.dbflute.util.DfCollectionUtil;
 
 import com.google.inject.Binder;
 import com.google.inject.Guice;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 
@@ -174,6 +178,15 @@ public abstract class GuiceTestCase extends InjectionTestCase {
     protected void xdestroyContainer() {
         _xcachedInjector = null;
         _xcurrentActiveInjector = null;
+    }
+
+    // -----------------------------------------------------
+    //                                               Binding
+    //                                               -------
+    @Override
+    @SuppressWarnings("unchecked")
+    protected Set<Class<? extends Annotation>> xgetBindingAnnotationSet() {
+        return newHashSet(Resource.class, Inject.class);
     }
 
     // -----------------------------------------------------

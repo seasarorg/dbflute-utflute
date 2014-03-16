@@ -15,9 +15,11 @@
  */
 package org.seasar.dbflute.unit.spring.action;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
 import org.seasar.dbflute.unit.spring.dbflute.exbhv.FooBhv;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
@@ -26,9 +28,15 @@ import org.springframework.transaction.PlatformTransactionManager;
  */
 public class FooAction {
 
+    @Autowired
     protected FooBhv fooBhv;
 
     protected PlatformTransactionManager transactionManager;
 
+    @Resource
     protected HttpServletRequest request;
+
+    public void setTransactionManager(PlatformTransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
 }

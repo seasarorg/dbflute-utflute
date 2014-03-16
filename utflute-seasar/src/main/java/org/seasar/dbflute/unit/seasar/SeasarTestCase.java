@@ -15,6 +15,10 @@
  */
 package org.seasar.dbflute.unit.seasar;
 
+import java.lang.annotation.Annotation;
+import java.util.Set;
+
+import javax.annotation.Resource;
 import javax.servlet.ServletException;
 import javax.transaction.NotSupportedException;
 import javax.transaction.Status;
@@ -23,6 +27,7 @@ import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 
 import org.seasar.dbflute.unit.core.InjectionTestCase;
+import org.seasar.dbflute.unit.core.binding.ComponentBinder;
 import org.seasar.dbflute.unit.core.mocklet.MockletHttpServletRequest;
 import org.seasar.dbflute.unit.core.mocklet.MockletHttpServletResponse;
 import org.seasar.dbflute.unit.core.mocklet.MockletServletConfig;
@@ -34,6 +39,7 @@ import org.seasar.framework.container.ExternalContext;
 import org.seasar.framework.container.S2Container;
 import org.seasar.framework.container.SingletonS2Container;
 import org.seasar.framework.container.TooManyRegistrationRuntimeException;
+import org.seasar.framework.container.annotation.tiger.Binding;
 import org.seasar.framework.container.factory.SingletonS2ContainerFactory;
 import org.seasar.framework.container.servlet.S2ContainerServlet;
 import org.seasar.framework.env.Env;
@@ -168,7 +174,16 @@ public abstract class SeasarTestCase extends InjectionTestCase {
         } catch (Exception e) {
             log(e.getMessage());
         }
+    }
 
+    // ===================================================================================
+    //                                                                   Component Binding
+    //                                                                   =================
+    @Override
+    protected ComponentBinder createOuterComponentBinder(Object bean) {
+        final ComponentBinder binder = super.createOuterComponentBinder(bean);
+        binder.byTypeInterfaceOnly();
+        return binder;
     }
 
     // ===================================================================================
@@ -240,6 +255,15 @@ public abstract class SeasarTestCase extends InjectionTestCase {
     //                                               -------
     protected void xdestroyContainer() {
         SingletonS2ContainerFactory.destroy();
+    }
+
+    // -----------------------------------------------------
+    //                                               Binding
+    //                                               -------
+    @Override
+    @SuppressWarnings("unchecked")
+    protected Set<Class<? extends Annotation>> xgetBindingAnnotationSet() {
+        return newHashSet(Resource.class, Binding.class);
     }
 
     // -----------------------------------------------------

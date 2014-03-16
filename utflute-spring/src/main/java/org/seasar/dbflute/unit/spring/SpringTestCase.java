@@ -15,10 +15,13 @@
  */
 package org.seasar.dbflute.unit.spring;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 
 import org.seasar.dbflute.unit.core.InjectionTestCase;
@@ -31,6 +34,7 @@ import org.seasar.dbflute.util.DfReflectionUtil;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.access.BeanFactoryLocator;
 import org.springframework.beans.factory.access.BeanFactoryReference;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.access.ContextSingletonBeanFactoryLocator;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -215,6 +219,15 @@ public abstract class SpringTestCase extends InjectionTestCase {
         final Field cacheMapField = DfReflectionUtil.getWholeField(locatorType, cacheMapName);
         final Map<?, ?> instances = (Map<?, ?>) DfReflectionUtil.getValueForcedly(cacheMapField, null);
         instances.clear();
+    }
+
+    // -----------------------------------------------------
+    //                                               Binding
+    //                                               -------
+    @Override
+    @SuppressWarnings("unchecked")
+    protected Set<Class<? extends Annotation>> xgetBindingAnnotationSet() {
+        return newHashSet(Resource.class, Autowired.class);
     }
 
     // -----------------------------------------------------

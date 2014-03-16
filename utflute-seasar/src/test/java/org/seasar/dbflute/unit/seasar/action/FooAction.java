@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.transaction.TransactionManager;
 
 import org.seasar.dbflute.unit.seasar.dbflute.exbhv.FooBhv;
+import org.seasar.framework.container.annotation.tiger.Binding;
 
 /**
  * @author jflute
@@ -27,12 +28,15 @@ import org.seasar.dbflute.unit.seasar.dbflute.exbhv.FooBhv;
  */
 public class FooAction {
 
-    @Resource
+    @Binding
     protected FooBhv fooBhv;
 
-    @Resource
     protected TransactionManager transactionManager;
 
     @Resource
     protected HttpServletRequest request;
+
+    public void setTransactionManager(TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
 }

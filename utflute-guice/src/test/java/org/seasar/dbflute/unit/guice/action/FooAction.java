@@ -15,10 +15,13 @@
  */
 package org.seasar.dbflute.unit.guice.action;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.transaction.TransactionManager;
 
 import org.seasar.dbflute.unit.guice.dbflute.exbhv.FooBhv;
+
+import com.google.inject.Inject;
 
 /**
  * @author jflute
@@ -26,9 +29,15 @@ import org.seasar.dbflute.unit.guice.dbflute.exbhv.FooBhv;
  */
 public class FooAction {
 
+    @Inject
     protected FooBhv fooBhv;
 
     protected TransactionManager transactionManager;
 
+    @Resource
     protected HttpServletRequest request;
+
+    public void setTransactionManager(TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
 }

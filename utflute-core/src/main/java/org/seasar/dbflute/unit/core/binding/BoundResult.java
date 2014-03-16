@@ -19,6 +19,8 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.seasar.dbflute.helper.beans.DfPropertyDesc;
+
 /**
  * @author jflute
  * @since 0.1.0 (2011/07/24 Sunday)
@@ -29,6 +31,7 @@ public class BoundResult {
     //                                                                           Attribute
     //                                                                           =========
     protected final List<Field> _boundFieldList = new ArrayList<Field>();
+    protected final List<DfPropertyDesc> _boundPropertyList = new ArrayList<DfPropertyDesc>();
 
     // ===================================================================================
     //                                                                         Constructor
@@ -39,5 +42,13 @@ public class BoundResult {
 
     public void addBoundField(Field boundField) {
         _boundFieldList.add(boundField);
+    }
+
+    public List<DfPropertyDesc> getBoundPropertyList() {
+        return _boundPropertyList;
+    }
+
+    public void addBoundProperty(DfPropertyDesc boundProperty) {
+        _boundPropertyList.add(boundProperty);
     }
 }

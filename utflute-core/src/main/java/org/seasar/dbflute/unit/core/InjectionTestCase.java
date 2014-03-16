@@ -15,8 +15,10 @@
  */
 package org.seasar.dbflute.unit.core;
 
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.seasar.dbflute.unit.core.binding.BoundResult;
 import org.seasar.dbflute.unit.core.binding.ComponentBinder;
@@ -44,7 +46,7 @@ public abstract class InjectionTestCase extends PlainTestCase {
     //                                     Component Binding
     //                                     -----------------
     /** The binder of component for the test case. (NotNull) */
-    protected final ComponentBinder _xtestCaseComponentBinder = xcreateTestCaseComponentBinder();
+    protected final ComponentBinder _xtestCaseComponentBinder = createTestCaseComponentBinder();
 
     /** The result of bound component for the test case. (NullAllowed: before binding, after destroy) */
     protected BoundResult _xtestCaseBoundResult;
@@ -158,7 +160,7 @@ public abstract class InjectionTestCase extends PlainTestCase {
     }
 
     protected void xdestroyTestCaseComponent() {
-        _xtestCaseComponentBinder.unbindComponent(this, _xtestCaseBoundResult);
+        _xtestCaseComponentBinder.releaseBoundComponent(this, _xtestCaseBoundResult);
         _xtestCaseBoundResult = null;
     }
 
@@ -182,12 +184,17 @@ public abstract class InjectionTestCase extends PlainTestCase {
     // ===================================================================================
     //                                                                   Component Binding
     //                                                                   =================
-    protected ComponentBinder createBasicComponentBinder() { // customize point
+    protected ComponentBinder xcreateBasicComponentBinder() { // customize point
         return new ComponentBinder(xcreateComponentProvider());
     }
 
     protected ComponentProvider xcreateComponentProvider() {
         return new ComponentProvider() {
+
+            public Set<Class<? extends Annotation>> getBindingAnnotationSet() {
+                return xgetBindingAnnotationSet();
+            }
+
             public <COMPONENT> COMPONENT provideComponent(Class<COMPONENT> type) {
                 return getComponent(type);
             }
@@ -207,10 +214,11 @@ public abstract class InjectionTestCase extends PlainTestCase {
         };
     }
 
-    protected ComponentBinder xcreateTestCaseComponentBinder() { // customize point
-        final ComponentBinder componentBinder = createBasicComponentBinder();
-        componentBinder.stopBindingAtSuper(InjectionTestCase.class);
-        return componentBinder;
+    protected ComponentBinder createTestCaseComponentBinder() { // customize point
+        final ComponentBinder binder = xcreateBasicComponentBinder();
+        binder.stopBindingAtSuper(InjectionTestCase.class);
+        binder.looseInjection();
+        return binder;
     }
 
     /**
@@ -260,12 +268,16 @@ public abstract class InjectionTestCase extends PlainTestCase {
      * @return The information of bound result. (NotNull)
      */
     protected BoundResult inject(Object bean) { // user method
-        return xdoInject(bean, xcreateOuterComponentBinder(bean));
+        final ComponentBinder binder = createOuterComponentBinder(bean);
+        xadjustOuterComponentBinder(bean, binder);
+        return xdoInject(bean, binder);
     }
 
-    protected ComponentBinder xcreateOuterComponentBinder(Object bean) { // customize point
-        final ComponentBinder componentBinder = createBasicComponentBinder();
-        componentBinder.suppressPrivateBinding();
+    protected ComponentBinder createOuterComponentBinder(Object bean) { // customize point
+        return xcreateBasicComponentBinder();
+    }
+
+    protected void xadjustOuterComponentBinder(Object bean, ComponentBinder binder) {
         // adjust mock components
         final List<Object> mockInstanceList = newArrayList();
         if (_xmockInstanceList != null) {
@@ -279,8 +291,9 @@ public abstract class InjectionTestCase extends PlainTestCase {
             if (isInjectionTargetMock(mockInstance)) {
                 inject(mockInstance);
             }
-            componentBinder.addMockInstance(mockInstance);
+            binder.addMockInstance(mockInstance);
         }
+
         // adjust no binding components
         final List<Class<?>> nonBindingTypeList = newArrayList();
         if (_xnonBindingTypeList != null) {
@@ -288,9 +301,8 @@ public abstract class InjectionTestCase extends PlainTestCase {
         }
         prepareNoBindingType(nonBindingTypeList);
         for (Class<?> nonBindingType : nonBindingTypeList) {
-            componentBinder.addNonBindingType(nonBindingType);
+            binder.addNonBindingType(nonBindingType);
         }
-        return componentBinder;
     }
 
     protected boolean isInjectionTargetMock(Object mockInstance) {
@@ -311,14 +323,16 @@ public abstract class InjectionTestCase extends PlainTestCase {
     protected void prepareNoBindingType(List<Class<?>> nonBindingTypeList) { // option by overriding
     }
 
-    protected BoundResult xdoInject(Object bean, ComponentBinder componentBinder) {
-        return componentBinder.bindComponent(bean);
+    protected BoundResult xdoInject(Object bean, ComponentBinder binder) {
+        return binder.bindComponent(bean);
     }
 
     // ===================================================================================
     //                                                                  Container Handling
     //                                                                  ==================
     protected abstract void xdestroyContainer();
+
+    protected abstract Set<Class<? extends Annotation>> xgetBindingAnnotationSet();
 
     /**
      * Get component from DI container for the type.

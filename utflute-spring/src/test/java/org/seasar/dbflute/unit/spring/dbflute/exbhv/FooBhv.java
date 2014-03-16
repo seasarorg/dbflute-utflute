@@ -28,4 +28,8 @@ public class FooBhv {
     public PlatformTransactionManager getTransactionManager() {
         return transactionManager;
     }
+
+    public void setTransactionManager(PlatformTransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
 }

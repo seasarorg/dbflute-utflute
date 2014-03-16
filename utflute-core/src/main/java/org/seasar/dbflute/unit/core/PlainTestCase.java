@@ -38,8 +38,8 @@ import org.seasar.dbflute.unit.core.cannonball.CannonballDirector;
 import org.seasar.dbflute.unit.core.cannonball.CannonballOption;
 import org.seasar.dbflute.unit.core.cannonball.CannonballRun;
 import org.seasar.dbflute.unit.core.cannonball.CannonballStaff;
-import org.seasar.dbflute.unit.core.mark.TraceMarkInfo;
-import org.seasar.dbflute.unit.core.mark.TraceMarkManager;
+import org.seasar.dbflute.unit.core.markhere.MarkHereInfo;
+import org.seasar.dbflute.unit.core.markhere.MarkHereManager;
 import org.seasar.dbflute.unit.core.thread.ThreadFireExecution;
 import org.seasar.dbflute.unit.core.thread.ThreadFireHelper;
 import org.seasar.dbflute.unit.core.thread.ThreadFireMan;
@@ -67,10 +67,10 @@ public abstract class PlainTestCase extends TestCase {
     //                                                                           Attribute
     //                                                                           =========
     /** The map of mark to assert that it goes through the road. (NullAllowed: when no mark) */
-    protected Map<String, TraceMarkInfo> _xmarkMap; // lazy-loaded
+    protected Map<String, MarkHereInfo> _xmarkMap; // lazy-loaded
 
     /** The manager of trace mark. (NotNull) */
-    protected final TraceMarkManager _xtraceMarkManager = new TraceMarkManager();
+    protected final MarkHereManager _xtraceMarkManager = new MarkHereManager();
 
     // ===================================================================================
     //                                                                            Settings
@@ -443,11 +443,11 @@ public abstract class PlainTestCase extends TestCase {
     protected void markHere(String mark) {
         assertNotNull(mark);
         if (_xmarkMap == null) {
-            _xmarkMap = new LinkedHashMap<String, TraceMarkInfo>();
+            _xmarkMap = new LinkedHashMap<String, MarkHereInfo>();
         }
-        TraceMarkInfo info = _xmarkMap.get(mark);
+        MarkHereInfo info = _xmarkMap.get(mark);
         if (info == null) {
-            info = new TraceMarkInfo();
+            info = new MarkHereInfo();
             _xmarkMap.put(mark, info);
             info.setMark(mark);
         }

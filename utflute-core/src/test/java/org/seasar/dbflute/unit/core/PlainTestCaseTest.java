@@ -23,6 +23,42 @@ import junit.framework.AssertionFailedError;
 public class PlainTestCaseTest extends PlainTestCase {
 
     // ===================================================================================
+    //                                                                            Settings
+    //                                                                            ========
+    @Override
+    protected void tearDown() throws Exception {
+        if ("test_markHere_nonAsserted".equals(getName())) {
+            try {
+                super.tearDown();
+            } catch (AssertionFailedError e) {
+                log(e.getMessage());
+            }
+        } else {
+            super.tearDown();
+        }
+    }
+
+    // ===================================================================================
+    //                                                                           Mark Here
+    //                                                                           =========
+    public void test_markHere_basic() throws Exception {
+        markHere("foo");
+        assertMarked("foo");
+        try {
+            assertMarked("bar");
+            fail();
+        } catch (AssertionFailedError e) {
+            log(e.getMessage());
+        }
+        markHere("qux");
+        assertMarked("qux");
+    }
+
+    public void test_markHere_nonAsserted() throws Exception {
+        markHere("foo");
+    }
+
+    // ===================================================================================
     //                                                                       Assert Helper
     //                                                                       =============
     public void test_assertContains() throws Exception {

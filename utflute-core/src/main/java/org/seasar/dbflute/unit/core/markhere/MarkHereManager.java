@@ -1,4 +1,4 @@
-package org.seasar.dbflute.unit.core.mark;
+package org.seasar.dbflute.unit.core.markhere;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -10,12 +10,12 @@ import org.seasar.dbflute.exception.factory.ExceptionMessageBuilder;
 /**
  * @author jflute
  */
-public class TraceMarkManager {
+public class MarkHereManager {
 
-    public void assertMarked(Map<String, TraceMarkInfo> markMap, String mark) {
+    public void assertMarked(Map<String, MarkHereInfo> markMap, String mark) {
         boolean existsMark = false;
         if (markMap != null) {
-            final TraceMarkInfo info = markMap.get(mark);
+            final MarkHereInfo info = markMap.get(mark);
             if (info != null) {
                 existsMark = true;
                 info.finishAssertion();
@@ -28,7 +28,7 @@ public class TraceMarkManager {
             br.addElement(mark);
             br.addItem("Mark Map");
             if (markMap != null && !markMap.isEmpty()) {
-                for (Entry<String, TraceMarkInfo> entry : markMap.entrySet()) {
+                for (Entry<String, MarkHereInfo> entry : markMap.entrySet()) {
                     br.addElement(entry.getValue());
                 }
             } else {
@@ -39,13 +39,13 @@ public class TraceMarkManager {
         }
     }
 
-    public void checkNonAssertedMark(Map<String, TraceMarkInfo> markMap) {
+    public void checkNonAssertedMark(Map<String, MarkHereInfo> markMap) {
         if (markMap == null) {
             return;
         }
-        TraceMarkInfo nonAssertedInfo = null;
-        for (Entry<String, TraceMarkInfo> entry : markMap.entrySet()) {
-            final TraceMarkInfo info = entry.getValue();
+        MarkHereInfo nonAssertedInfo = null;
+        for (Entry<String, MarkHereInfo> entry : markMap.entrySet()) {
+            final MarkHereInfo info = entry.getValue();
             if (!info.isAsserted()) {
                 nonAssertedInfo = info;
                 break;
@@ -70,7 +70,7 @@ public class TraceMarkManager {
             br.addItem("Non-Asserted Mark");
             br.addElement(nonAssertedInfo);
             br.addItem("Mark Map");
-            for (Entry<String, TraceMarkInfo> entry : markMap.entrySet()) {
+            for (Entry<String, MarkHereInfo> entry : markMap.entrySet()) {
                 br.addElement(entry.getValue());
             }
             final String msg = br.buildExceptionMessage();

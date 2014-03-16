@@ -1,11 +1,11 @@
-package org.seasar.dbflute.unit.core.mark;
+package org.seasar.dbflute.unit.core.markhere;
 
 import org.seasar.dbflute.util.DfTypeUtil;
 
 /**
  * @author jflute
  */
-public class TraceMarkInfo {
+public class MarkHereInfo {
 
     protected String _mark;
     protected int _count;

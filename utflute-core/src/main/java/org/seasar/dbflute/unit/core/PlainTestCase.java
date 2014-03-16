@@ -28,6 +28,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+import javax.sql.DataSource;
+
 import junit.framework.TestCase;
 
 import org.apache.log4j.Level;
@@ -869,6 +871,15 @@ public abstract class PlainTestCase extends TestCase {
             String msg = "The argument 'resource' should not be null.";
             throw new IllegalArgumentException(msg);
         }
+    }
+
+    /**
+     * Get the data source for database.
+     * @return The instance from DI container. (basically NotNull: if null, data source unsupported)
+     */
+    protected DataSource getDataSource() {
+        // should be overridden by DI container's test case
+        return null;
     }
 
     // ===================================================================================

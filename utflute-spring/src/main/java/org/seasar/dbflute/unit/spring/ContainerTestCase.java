@@ -41,10 +41,22 @@ public abstract class ContainerTestCase extends SpringTestCase {
     //                                                                         JDBC Helper
     //                                                                         ===========
     /**
-     * Get the data source for database. (actually wrapped)
-     * @return The instance from DI container. (NotNull)
+     * {@inheritDoc}
      */
+    @Override
     protected DataSource getDataSource() { // user method
+        if (_xdataSource == null) {
+            return null;
+        }
+        return wrapSpringTransactionalDataSource(_xdataSource); // as default
+    }
+
+    /**
+     * Wrap the data source for Spring transaction. (basically for commons-DBCP)
+     * @param dataSource The data source provided from DI container. (NotNull)
+     * @return The wrapped data source for Spring transaction. (NotNull)
+     */
+    protected DataSource wrapSpringTransactionalDataSource(DataSource dataSource) {
         // same way as DBFlute does because it may use, e.g. Commons DBCP
         final SpringTransactionalDataSourceHandler handler = new SpringTransactionalDataSourceHandler();
         return new HandlingDataSourceWrapper(_xdataSource, new DataSourceHandler() {
@@ -52,14 +64,6 @@ public abstract class ContainerTestCase extends SpringTestCase {
                 return handler.getConnection(dataSource);
             }
         });
-    }
-
-    /**
-     * Get the plain (non-wrapped) data source for database.
-     * @return The instance from DI container. (NotNull)
-     */
-    protected DataSource doGetDataSourcePlainly() {
-        return _xdataSource;
     }
 
     protected static class SpringTransactionalDataSourceHandler implements DataSourceHandler {

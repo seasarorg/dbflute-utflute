@@ -115,7 +115,11 @@ public abstract class SeasarTestCase extends InjectionTestCase {
      */
     @Override
     protected TransactionResource beginNewTransaction() { // user method
-        final TransactionManager manager = getComponent(TransactionManager.class);
+        final Class<TransactionManager> managerType = TransactionManager.class;
+        if (!hasComponent(managerType)) {
+            return null;
+        }
+        final TransactionManager manager = getComponent(managerType);
         final Transaction suspendedTx;
         try {
             if (manager.getStatus() != Status.STATUS_NO_TRANSACTION) {

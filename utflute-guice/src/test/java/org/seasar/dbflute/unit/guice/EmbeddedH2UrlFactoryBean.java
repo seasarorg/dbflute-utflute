@@ -13,21 +13,20 @@
  * either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.seasar.dbflute.unit.spring;
+package org.seasar.dbflute.unit.guice;
 
 import java.io.File;
 import java.io.IOException;
 
 import org.seasar.dbflute.util.DfReflectionUtil;
 import org.seasar.dbflute.util.DfResourceUtil;
-import org.springframework.beans.factory.FactoryBean;
 
 /**
  * The bean for resolving a path to a database of H2 Database. <br />
  * This is NOT an important class as example. So you don't need to read this.
  * @author jflute
  */
-public class EmbeddedH2UrlFactoryBean implements FactoryBean<Object> {
+public class EmbeddedH2UrlFactoryBean {
 
     // ===================================================================================
     //                                                                           Attribute
@@ -39,7 +38,7 @@ public class EmbeddedH2UrlFactoryBean implements FactoryBean<Object> {
     //                                                                                Main
     //                                                                                ====
     public Object getObject() throws Exception {
-        return getUrl();
+        return buildUrl();
     }
 
     public Class<?> getObjectType() {
@@ -50,7 +49,7 @@ public class EmbeddedH2UrlFactoryBean implements FactoryBean<Object> {
         return true;
     }
 
-    protected String getUrl() {
+    protected String buildUrl() {
         try {
             final File buildDir = getBuildDir();
             final String canonicalPath = buildDir.getCanonicalPath();
@@ -60,7 +59,7 @@ public class EmbeddedH2UrlFactoryBean implements FactoryBean<Object> {
         }
     }
 
-    protected File getBuildDir() {
+    private File getBuildDir() {
         final Class<?> clazz = DfReflectionUtil.forName(_referenceClassName);
         return DfResourceUtil.getBuildDir(clazz);
     }

@@ -14,3 +14,7 @@ cd ../utflute-seasar
 # Spring
 cd ../utflute-spring
 . maven-deploy.sh
+
+# Guice
+cd ../utflute-guice
+. maven-deploy.sh

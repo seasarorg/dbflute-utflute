@@ -13,15 +13,15 @@
  * either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.seasar.dbflute.unit.seasar;
+package org.seasar.dbflute.unit.guice;
 
 import javax.sql.DataSource;
 
 /**
  * @author jflute
- * @since 0.1.0 (2011/07/24 Sunday)
+ * @since 0.4.0 (2014/03/16 Sunday)
  */
-public abstract class ContainerTestCase extends SeasarTestCase {
+public abstract class ContainerTestCase extends GuiceTestCase {
 
     // ===================================================================================
     //                                                                           Attribute

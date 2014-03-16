@@ -49,13 +49,13 @@ public abstract class SpringTestCase extends InjectionTestCase {
     protected static String[] _xpreparedConfigFiles;
 
     /** The cached application context for DI container. (NullAllowed: null means beginning or test execution) */
-    protected static ApplicationContext _xcachedApplicationContext;
+    protected static ApplicationContext _xcachedContext;
 
     // -----------------------------------------------------
     //                                         Spring Object
     //                                         -------------
-    /** The current context of application. {Spring Object} */
-    protected ApplicationContext _xcurrentApplicationContext;
+    /** The current active context of application. {Spring Object} */
+    protected ApplicationContext _xcurrentActiveContext;
 
     // ===================================================================================
     //                                                                            Settings
@@ -71,7 +71,7 @@ public abstract class SpringTestCase extends InjectionTestCase {
         final String[] configFiles = prepareConfigFiles();
         if (xisInitializedContainer()) { // already exists
             if (xisEqualWithPreparedConfigurations(configFiles)) { // no change
-                _xcurrentApplicationContext = _xcachedApplicationContext;
+                _xcurrentActiveContext = _xcachedContext;
                 return; // no need to initialize
             } else { // changed
                 xdestroyContainer();
@@ -104,7 +104,7 @@ public abstract class SpringTestCase extends InjectionTestCase {
 
     @Override
     protected void xclearCachedContainer() {
-        _xcachedApplicationContext = null;
+        _xcachedContext = null;
     }
 
     // ===================================================================================
@@ -116,6 +116,9 @@ public abstract class SpringTestCase extends InjectionTestCase {
     @Override
     protected TransactionResource beginNewTransaction() { // user method
         final String managerKey = "transactionManager";
+        if (!hasComponent(managerKey)) {
+            return null;
+        }
         final PlatformTransactionManager manager = getComponent(managerKey);
         final DefaultTransactionDefinition def = new DefaultTransactionDefinition();
         def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -130,29 +133,29 @@ public abstract class SpringTestCase extends InjectionTestCase {
     //                                                                     Spring Handling
     //                                                                     ===============
     protected boolean xisInitializedContainer() {
-        return _xcachedApplicationContext != null;
+        return _xcachedContext != null;
     }
 
     protected void xinitializeContainer(String[] configFiles) {
         if (configFiles != null && configFiles.length > 0) {
-            _xcurrentApplicationContext = new ClassPathXmlApplicationContext(configFiles);
+            _xcurrentActiveContext = new ClassPathXmlApplicationContext(configFiles);
         } else {
             final BeanFactoryLocator locator = ContextSingletonBeanFactoryLocator.getInstance();
             final BeanFactoryReference ref = locator.useBeanFactory("context");
-            _xcurrentApplicationContext = (ApplicationContext) ref.getFactory();
+            _xcurrentActiveContext = (ApplicationContext) ref.getFactory();
         }
-        _xcachedApplicationContext = _xcurrentApplicationContext;
+        _xcachedContext = _xcurrentActiveContext;
     }
 
     protected void xdestroyContainer() {
         xreleaseClassPathContext();
         xreleaseLocatorContextCache();
-        _xcurrentApplicationContext = null;
-        _xcachedApplicationContext = null;
+        _xcachedContext = null;
+        _xcurrentActiveContext = null;
     }
 
     protected void xreleaseClassPathContext() {
-        final ApplicationContext cachedContext = _xcachedApplicationContext;
+        final ApplicationContext cachedContext = _xcachedContext;
         if (cachedContext != null && cachedContext instanceof ClassPathXmlApplicationContext) {
             ((ClassPathXmlApplicationContext) cachedContext).destroy();
         }
@@ -170,7 +173,7 @@ public abstract class SpringTestCase extends InjectionTestCase {
      * {@inheritDoc}
      */
     protected <COMPONENT> COMPONENT getComponent(Class<COMPONENT> type) { // user method
-        return _xcurrentApplicationContext.getBean(type);
+        return _xcurrentActiveContext.getBean(type);
     }
 
     /**
@@ -178,7 +181,7 @@ public abstract class SpringTestCase extends InjectionTestCase {
      */
     @SuppressWarnings("unchecked")
     protected <COMPONENT> COMPONENT getComponent(String name) { // user method
-        return (COMPONENT) _xcurrentApplicationContext.getBean(name);
+        return (COMPONENT) _xcurrentActiveContext.getBean(name);
     }
 
     /**

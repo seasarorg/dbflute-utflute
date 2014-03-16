@@ -13,18 +13,19 @@
  * either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.seasar.dbflute.unit.spring.action;
+package org.seasar.dbflute.unit.guice.action;
 
-import org.seasar.dbflute.unit.spring.dbflute.exbhv.FooBhv;
-import org.springframework.transaction.PlatformTransactionManager;
+import javax.transaction.TransactionManager;
+
+import org.seasar.dbflute.unit.guice.dbflute.exbhv.FooBhv;
 
 /**
  * @author jflute
- * @since 0.1.1 (2011/07/25 Monday)
+ * @since 0.4.0 (2014/03/16 Sunday)
  */
 public class FooAction {
 
     protected FooBhv fooBhv;
 
-    protected PlatformTransactionManager transactionManager;
+    protected TransactionManager transactionManager;
 }

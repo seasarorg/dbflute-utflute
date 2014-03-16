@@ -7,16 +7,24 @@
 		<artifactId>utflute-base</artifactId>
 		<version>0.4.0</version>
 	</parent>
-	<artifactId>utflute-spring</artifactId>
+	<artifactId>utflute-guice</artifactId>
 	<packaging>jar</packaging>
 
-	<name>UTFlute Spring</name>
-	<description>The unit test library for Spring Framework (with DBFlute)</description>
+	<name>UTFlute Guice</name>
+	<description>The unit test library for Google Guice (with DBFlute)</description>
 
 	<properties>
-		<spring.version>3.0.5.RELEASE</spring.version>
+		<guice.version>2.0</guice.version>
 		<utflute.core.version>0.4.0</utflute.core.version>
 	</properties>
+
+	<repositories>
+		<repository>
+			<id>local</id>
+			<name>Local Repository</name>
+			<url>file:${basedir}/repo</url>
+		</repository>
+	</repositories>
 
 	<dependencies>
 		<!-- =============== -->
@@ -32,25 +40,19 @@
 		<!-- |   provided   | -->
 		<!-- ================ -->
 		<dependency>
-		    <groupId>org.springframework</groupId>
-		    <artifactId>spring-core</artifactId>
-		    <version>${spring.version}</version>
-		    <scope>provided</scope>
-		</dependency>
-		<dependency>
-		    <groupId>org.springframework</groupId>
-		    <artifactId>spring-jdbc</artifactId>
-		    <version>${spring.version}</version>
-		    <scope>provided</scope>
+			<groupId>com.google.inject</groupId>
+			<artifactId>guice</artifactId>
+			<version>${guice.version}</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<!-- ================ -->
 		<!-- |     test     | -->
 		<!-- ================ -->
 		<dependency>
-			<groupId>commons-dbcp</groupId>
-			<artifactId>commons-dbcp</artifactId>
-			<version>1.3</version>
+			<groupId>com.atomikos</groupId>
+			<artifactId>transactions</artifactId>
+			<version>3.3.4</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

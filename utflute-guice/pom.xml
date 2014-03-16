@@ -14,7 +14,7 @@
 	<description>The unit test library for Google Guice (with DBFlute)</description>
 
 	<properties>
-		<guice.version>2.0</guice.version>
+		<guice.version>3.0</guice.version>
 		<utflute.core.version>0.4.0</utflute.core.version>
 	</properties>
 
@@ -35,15 +35,10 @@
 			<artifactId>utflute-core</artifactId>
 			<version>${utflute.core.version}</version>
 		</dependency>
-
-		<!-- ================ -->
-		<!-- |   provided   | -->
-		<!-- ================ -->
 		<dependency>
 			<groupId>com.google.inject</groupId>
 			<artifactId>guice</artifactId>
 			<version>${guice.version}</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<!-- ================ -->

@@ -13,22 +13,25 @@
  * either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.seasar.dbflute.unit.guice.action;
+package org.seasar.dbflute.unit.core.mocklet;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.transaction.TransactionManager;
+import javax.servlet.http.HttpSession;
 
-import org.seasar.dbflute.unit.guice.dbflute.exbhv.FooBhv;
+import org.seasar.dbflute.util.DfReflectionUtil;
 
 /**
- * @author jflute
- * @since 0.4.0 (2014/03/16 Sunday)
+ * @author modified by jflute (originated in Seasar)
  */
-public class FooAction {
+public interface MockletHttpSession extends HttpSession, Mocklet {
 
-    protected FooBhv fooBhv;
+    String METHOD_NAME_IS_VALID = DfReflectionUtil.getPublicMethod(MockletHttpSession.class, "isValid", null).getName();
 
-    protected TransactionManager transactionManager;
+    String METHOD_NAME_SET_VALID = DfReflectionUtil.getPublicMethod(MockletHttpSession.class, "setValid",
+            new Class[] { Boolean.TYPE }).getName();
 
-    protected HttpServletRequest request;
+    boolean isValid();
+
+    void setValid(boolean valid);
+
+    void access();
 }

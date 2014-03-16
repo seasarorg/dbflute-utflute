@@ -28,10 +28,6 @@
 			<artifactId>utflute-core</artifactId>
 			<version>${utflute.core.version}</version>
 		</dependency>
-
-		<!-- ================ -->
-		<!-- |   provided   | -->
-		<!-- ================ -->
 		<dependency>
 			<groupId>org.seasar.container</groupId>
 			<artifactId>s2-tiger</artifactId>
@@ -42,7 +38,6 @@
 					<artifactId>easymock</artifactId>
 				</exclusion>
 			</exclusions>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 		    <groupId>org.seasar.cms.s2-classbuilder</groupId>
@@ -58,13 +53,11 @@
 					<artifactId>s2-extension</artifactId>
 				</exclusion>
 			</exclusions>
-			<scope>provided</scope>
 		</dependency>
         <dependency>
             <groupId>org.seasar.sastruts</groupId>
             <artifactId>sa-struts</artifactId>
             <version>${sastruts.version}</version>
-			<scope>provided</scope>
         </dependency>
 	</dependencies>
 </project>

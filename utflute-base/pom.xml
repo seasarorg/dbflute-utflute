@@ -180,21 +180,34 @@
 	</repositories>
 
 	<dependencies>
-		<!-- ================ -->
-		<!-- |   provided   | -->
-		<!-- ================ -->
+		<!-- =============== -->
+		<!-- |   compile   | -->
+		<!-- =============== -->
+		<!-- dbflute -->
 		<dependency>
 			<groupId>org.seasar.dbflute</groupId>
 			<artifactId>dbflute-runtime</artifactId>
 			<version>${dbflute.version}</version>
-			<scope>provided</scope>
+		</dependency>
+
+		<!-- ================ -->
+		<!-- |   provided   | -->
+		<!-- ================ -->
+		<!-- servlet -->
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<version>2.4</version>
+			<scope>provided</scope> 
 		</dependency>
 		<dependency>
-			<groupId>org.apache.geronimo.specs</groupId>
-			<artifactId>geronimo-j2ee_1.4_spec</artifactId>
-			<version>1.0</version>
-			<scope>provided</scope>
+			<groupId>javax.servlet</groupId>
+			<artifactId>jsp-api</artifactId>
+			<version>2.0</version>
+			<scope>provided</scope> 
 		</dependency>
+
+	    <!-- j2ee -->
 		<dependency>
 			<groupId>org.apache.geronimo.specs</groupId>
 			<artifactId>geronimo-jta_1.1_spec</artifactId>
@@ -202,11 +215,13 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.14</version>
+			<groupId>org.apache.geronimo.specs</groupId>
+			<artifactId>geronimo-ejb_3.0_spec</artifactId>
+			<version>1.0</version>
 			<scope>provided</scope>
 		</dependency>
+
+	    <!-- junit -->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -223,5 +238,11 @@
 	    	<version>${h2.jdbc.version}</version>
 	    	<scope>test</scope>
 	    </dependency>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.14</version>
+	    	<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>

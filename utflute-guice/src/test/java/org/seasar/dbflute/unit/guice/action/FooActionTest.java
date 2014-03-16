@@ -34,8 +34,10 @@ public class FooActionTest extends MockGuiceTestCase {
         // ## Assert ##
         log(action.fooBhv);
         log(action.transactionManager);
+        log(action.request);
         assertNotNull(action.fooBhv);
         assertNotNull(action.transactionManager);
+        assertNotNull(action.request);
     }
 
     public void test_inject_mockInstance() throws Exception {

@@ -17,13 +17,21 @@ package org.seasar.dbflute.unit.guice;
 
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.transaction.TransactionManager;
 
 import org.seasar.dbflute.unit.core.InjectionTestCase;
+import org.seasar.dbflute.unit.core.mocklet.MockletHttpServletRequest;
+import org.seasar.dbflute.unit.core.mocklet.MockletHttpServletResponse;
+import org.seasar.dbflute.unit.core.mocklet.MockletServletConfig;
+import org.seasar.dbflute.unit.core.mocklet.MockletServletContext;
 import org.seasar.dbflute.unit.core.transaction.TransactionFailureException;
 import org.seasar.dbflute.unit.core.transaction.TransactionResource;
 import org.seasar.dbflute.util.DfCollectionUtil;
 
+import com.google.inject.Binder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -68,8 +76,7 @@ public abstract class GuiceTestCase extends InjectionTestCase {
             return;
         }
         final List<Module> moduleList = prepareModuleList();
-        _xcurrentActiveInjector = Guice.createInjector(moduleList.toArray(new Module[] {}));
-        _xcachedInjector = _xcurrentActiveInjector;
+        xinitializeContainer(moduleList);
     }
 
     /**
@@ -110,12 +117,68 @@ public abstract class GuiceTestCase extends InjectionTestCase {
     // ===================================================================================
     //                                                                      Guice Handling
     //                                                                      ==============
+    // -----------------------------------------------------
+    //                                            Initialize
+    //                                            ----------
+    protected boolean xisInitializedContainer() {
+        return _xcachedInjector != null;
+    }
+
+    protected void xinitializeContainer(List<Module> moduleList) {
+        if (isSuppressWebMock()) { // library
+            xdoInitializeContainerAsLibrary(moduleList);
+        } else { // web
+            xdoInitializeContainerAsWeb(moduleList);
+        }
+    }
+
+    /**
+     * Does it suppress web mock? e.g. HttpServletRequest, HttpSession
+     * @return The determination, true or false.
+     */
+    protected boolean isSuppressWebMock() {
+        return false;
+    }
+
+    protected void xdoInitializeContainerAsLibrary(List<Module> moduleList) {
+        _xcurrentActiveInjector = Guice.createInjector(moduleList.toArray(new Module[] {}));
+        _xcachedInjector = _xcurrentActiveInjector;
+    }
+
+    protected void xdoInitializeContainerAsWeb(List<Module> moduleList) {
+        final Module mockletModule = new Module() {
+            public void configure(Binder binder) {
+                final MockletServletConfig servletConfig = createMockletServletConfig();
+                final MockletServletContext servletContext = createMockletServletContext();
+                xregisterWebMockContext(servletConfig, servletContext, binder);
+            }
+        };
+        moduleList.add(mockletModule);
+        xdoInitializeContainerAsLibrary(moduleList);
+    }
+
+    protected void xregisterWebMockContext(MockletServletConfig servletConfig, MockletServletContext servletContext,
+            Binder binder) {
+        final MockletHttpServletRequest request = createMockletHttpServletRequest(servletContext);
+        final MockletHttpServletResponse response = createMockletHttpServletResponse(request);
+        final HttpSession session = request.getSession(true);
+        binder.bind(HttpServletRequest.class).toInstance(request);
+        binder.bind(HttpServletResponse.class).toInstance(response);
+        binder.bind(HttpSession.class).toInstance(session);
+    }
+
+    // -----------------------------------------------------
+    //                                               Destroy
+    //                                               -------
     @Override
     protected void xdestroyContainer() {
         _xcachedInjector = null;
         _xcurrentActiveInjector = null;
     }
 
+    // -----------------------------------------------------
+    //                                             Component
+    //                                             ---------
     /**
      * {@inheritDoc}
      */

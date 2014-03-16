@@ -19,7 +19,13 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Map;
 
+import javax.servlet.http.HttpSession;
+
 import org.seasar.dbflute.unit.core.InjectionTestCase;
+import org.seasar.dbflute.unit.core.mocklet.MockletHttpServletRequest;
+import org.seasar.dbflute.unit.core.mocklet.MockletHttpServletResponse;
+import org.seasar.dbflute.unit.core.mocklet.MockletServletConfig;
+import org.seasar.dbflute.unit.core.mocklet.MockletServletContext;
 import org.seasar.dbflute.unit.core.transaction.TransactionResource;
 import org.seasar.dbflute.util.DfReflectionUtil;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -132,11 +138,30 @@ public abstract class SpringTestCase extends InjectionTestCase {
     // ===================================================================================
     //                                                                     Spring Handling
     //                                                                     ===============
+    // -----------------------------------------------------
+    //                                            Initialize
+    //                                            ----------
     protected boolean xisInitializedContainer() {
         return _xcachedContext != null;
     }
 
     protected void xinitializeContainer(String[] configFiles) {
+        if (isSuppressWebMock()) { // library
+            xdoInitializeContainerAsLibrary(configFiles);
+        } else { // web
+            xdoInitializeContainerAsWeb(configFiles);
+        }
+    }
+
+    /**
+     * Does it suppress web mock? e.g. HttpServletRequest, HttpSession
+     * @return The determination, true or false.
+     */
+    protected boolean isSuppressWebMock() {
+        return false;
+    }
+
+    protected void xdoInitializeContainerAsLibrary(String[] configFiles) {
         if (configFiles != null && configFiles.length > 0) {
             _xcurrentActiveContext = new ClassPathXmlApplicationContext(configFiles);
         } else {
@@ -147,6 +172,29 @@ public abstract class SpringTestCase extends InjectionTestCase {
         _xcachedContext = _xcurrentActiveContext;
     }
 
+    protected void xdoInitializeContainerAsWeb(String[] configFiles) {
+        xdoInitializeContainerAsLibrary(configFiles);
+        final MockletServletConfig servletConfig = createMockletServletConfig();
+        final MockletServletContext servletContext = createMockletServletContext();
+        servletConfig.setServletContext(servletContext);
+        xregisterWebMockContext(servletConfig, servletContext);
+    }
+
+    protected void xregisterWebMockContext(MockletServletConfig servletConfig, MockletServletContext servletContext) { // like RequestContextFilter
+        final MockletHttpServletRequest request = createMockletHttpServletRequest(servletContext);
+        final MockletHttpServletResponse response = createMockletHttpServletResponse(request);
+        final HttpSession session = request.getSession(true);
+        // I don't know how to set request and response to Spring DI system
+        // so register them as mock instance for now
+        // (but they cannot be injected to normal component)
+        registerMockInstance(request);
+        registerMockInstance(response);
+        registerMockInstance(session);
+    }
+
+    // -----------------------------------------------------
+    //                                               Destroy
+    //                                               -------
     protected void xdestroyContainer() {
         xreleaseClassPathContext();
         xreleaseLocatorContextCache();
@@ -169,6 +217,9 @@ public abstract class SpringTestCase extends InjectionTestCase {
         instances.clear();
     }
 
+    // -----------------------------------------------------
+    //                                             Component
+    //                                             ---------
     /**
      * {@inheritDoc}
      */

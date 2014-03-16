@@ -15,9 +15,7 @@
  */
 package org.seasar.dbflute.unit.seasar;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import javax.transaction.NotSupportedException;
 import javax.transaction.Status;
 import javax.transaction.SystemException;
@@ -25,6 +23,10 @@ import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 
 import org.seasar.dbflute.unit.core.InjectionTestCase;
+import org.seasar.dbflute.unit.core.mocklet.MockletHttpServletRequest;
+import org.seasar.dbflute.unit.core.mocklet.MockletHttpServletResponse;
+import org.seasar.dbflute.unit.core.mocklet.MockletServletConfig;
+import org.seasar.dbflute.unit.core.mocklet.MockletServletContext;
 import org.seasar.dbflute.unit.core.transaction.TransactionFailureException;
 import org.seasar.dbflute.unit.core.transaction.TransactionResource;
 import org.seasar.framework.container.ComponentNotFoundRuntimeException;
@@ -35,10 +37,6 @@ import org.seasar.framework.container.TooManyRegistrationRuntimeException;
 import org.seasar.framework.container.factory.SingletonS2ContainerFactory;
 import org.seasar.framework.container.servlet.S2ContainerServlet;
 import org.seasar.framework.env.Env;
-import org.seasar.framework.mock.servlet.MockHttpServletRequestImpl;
-import org.seasar.framework.mock.servlet.MockHttpServletResponseImpl;
-import org.seasar.framework.mock.servlet.MockServletConfigImpl;
-import org.seasar.framework.mock.servlet.MockServletContextImpl;
 
 /**
  * @author jflute
@@ -210,10 +208,10 @@ public abstract class SeasarTestCase extends InjectionTestCase {
     }
 
     protected void xdoInitializeContainerAsWeb(String configFile) {
-        final MockServletConfigImpl servletConfig = xcreateMockServletConfigImpl();
-        servletConfig.setInitParameter(S2ContainerServlet.CONFIG_PATH_KEY, configFile);
-        final MockServletContextImpl servletContext = xcreateMockServletContextImpl();
+        final MockletServletConfig servletConfig = createMockletServletConfig();
+        final MockletServletContext servletContext = createMockletServletContext();
         servletConfig.setServletContext(servletContext);
+        servletConfig.setInitParameter(S2ContainerServlet.CONFIG_PATH_KEY, configFile);
         final S2ContainerServlet containerServlet = xcreateS2ContainerServlet();
         try {
             containerServlet.init(servletConfig);
@@ -221,40 +219,20 @@ public abstract class SeasarTestCase extends InjectionTestCase {
             String msg = "Failed to initialize servlet config to servlet: " + servletConfig;
             throw new IllegalStateException(msg, e.getRootCause());
         }
-        xregisterWebMockContext(servletContext);
+        xregisterWebMockContext(servletConfig, servletContext);
     }
 
     protected S2ContainerServlet xcreateS2ContainerServlet() {
         return new S2ContainerServlet();
     }
 
-    protected MockServletConfigImpl xcreateMockServletConfigImpl() {
-        return new MockServletConfigImpl();
-    }
-
-    protected MockServletContextImpl xcreateMockServletContextImpl() {
-        return new MockServletContextImpl("utservlet");
-    }
-
-    protected void xregisterWebMockContext(ServletContext servletContext) { // like S2ContainerFilter
+    protected void xregisterWebMockContext(MockletServletConfig servletConfig, MockletServletContext servletContext) { // like S2ContainerFilter
         final S2Container container = SingletonS2ContainerFactory.getContainer();
         final ExternalContext externalContext = container.getExternalContext();
-        final MockHttpServletRequestImpl request = xcreateMockHttpServletRequestImpl(servletContext);
-        final MockHttpServletResponseImpl response = xcreateMockHttpServletResponseImpl(request);
+        final MockletHttpServletRequest request = createMockletHttpServletRequest(servletContext);
+        final MockletHttpServletResponse response = createMockletHttpServletResponse(request);
         externalContext.setRequest(request);
         externalContext.setResponse(response);
-    }
-
-    protected MockHttpServletRequestImpl xcreateMockHttpServletRequestImpl(ServletContext servletContext) {
-        return new MockHttpServletRequestImpl(servletContext, xgetServletPath());
-    }
-
-    protected MockHttpServletResponseImpl xcreateMockHttpServletResponseImpl(HttpServletRequest request) {
-        return new MockHttpServletResponseImpl(request);
-    }
-
-    protected String xgetServletPath() {
-        return "/utflute";
     }
 
     // -----------------------------------------------------

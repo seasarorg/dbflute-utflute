@@ -13,22 +13,15 @@
  * either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.seasar.dbflute.unit.guice.action;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.transaction.TransactionManager;
-
-import org.seasar.dbflute.unit.guice.dbflute.exbhv.FooBhv;
+package org.seasar.dbflute.unit.core.mocklet.helper;
 
 /**
- * @author jflute
- * @since 0.4.0 (2014/03/16 Sunday)
+ * @param <ELEMENT> The type of element.
+ * @author modified by jflute (originated in Seasar)
  */
-public class FooAction {
+public class MockletEmptyEnumeration<ELEMENT> extends MockletEnumerationAdapter<ELEMENT> {
 
-    protected FooBhv fooBhv;
-
-    protected TransactionManager transactionManager;
-
-    protected HttpServletRequest request;
+    public MockletEmptyEnumeration() {
+        super(new MockletEmptyIterator<ELEMENT>());
+    }
 }

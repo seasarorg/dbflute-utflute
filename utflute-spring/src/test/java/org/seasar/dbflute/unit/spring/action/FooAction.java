@@ -15,6 +15,8 @@
  */
 package org.seasar.dbflute.unit.spring.action;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.seasar.dbflute.unit.spring.dbflute.exbhv.FooBhv;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -27,4 +29,6 @@ public class FooAction {
     protected FooBhv fooBhv;
 
     protected PlatformTransactionManager transactionManager;
+
+    protected HttpServletRequest request;
 }

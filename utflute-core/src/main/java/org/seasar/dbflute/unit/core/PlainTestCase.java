@@ -28,6 +28,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 
 import junit.framework.TestCase;
@@ -42,6 +44,14 @@ import org.seasar.dbflute.unit.core.cannonball.CannonballRun;
 import org.seasar.dbflute.unit.core.cannonball.CannonballStaff;
 import org.seasar.dbflute.unit.core.markhere.MarkHereInfo;
 import org.seasar.dbflute.unit.core.markhere.MarkHereManager;
+import org.seasar.dbflute.unit.core.mocklet.MockletHttpServletRequest;
+import org.seasar.dbflute.unit.core.mocklet.MockletHttpServletRequestImpl;
+import org.seasar.dbflute.unit.core.mocklet.MockletHttpServletResponse;
+import org.seasar.dbflute.unit.core.mocklet.MockletHttpServletResponseImpl;
+import org.seasar.dbflute.unit.core.mocklet.MockletServletConfig;
+import org.seasar.dbflute.unit.core.mocklet.MockletServletConfigImpl;
+import org.seasar.dbflute.unit.core.mocklet.MockletServletContext;
+import org.seasar.dbflute.unit.core.mocklet.MockletServletContextImpl;
 import org.seasar.dbflute.unit.core.thread.ThreadFireExecution;
 import org.seasar.dbflute.unit.core.thread.ThreadFireHelper;
 import org.seasar.dbflute.unit.core.thread.ThreadFireMan;
@@ -880,6 +890,29 @@ public abstract class PlainTestCase extends TestCase {
     protected DataSource getDataSource() {
         // should be overridden by DI container's test case
         return null;
+    }
+
+    // ===================================================================================
+    //                                                                             Mocklet
+    //                                                                             =======
+    protected MockletServletConfig createMockletServletConfig() {
+        return new MockletServletConfigImpl();
+    }
+
+    protected MockletServletContext createMockletServletContext() {
+        return new MockletServletContextImpl("utservlet");
+    }
+
+    protected MockletHttpServletRequest createMockletHttpServletRequest(ServletContext servletContext) {
+        return new MockletHttpServletRequestImpl(servletContext, prepareServletPath());
+    }
+
+    protected MockletHttpServletResponse createMockletHttpServletResponse(HttpServletRequest request) {
+        return new MockletHttpServletResponseImpl(request);
+    }
+
+    protected String prepareServletPath() { // customize point
+        return "/utflute";
     }
 
     // ===================================================================================

@@ -13,22 +13,25 @@
  * either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.seasar.dbflute.unit.guice.action;
+package org.seasar.dbflute.unit.core.mocklet;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.transaction.TransactionManager;
+import java.io.IOException;
 
-import org.seasar.dbflute.unit.guice.dbflute.exbhv.FooBhv;
+import javax.servlet.GenericServlet;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 
 /**
- * @author jflute
- * @since 0.4.0 (2014/03/16 Sunday)
+ * @author modified by jflute (originated in Seasar)
  */
-public class FooAction {
+public class MockletServlet extends GenericServlet implements Mocklet {
 
-    protected FooBhv fooBhv;
+    private static final long serialVersionUID = 1L;
 
-    protected TransactionManager transactionManager;
+    public void service(ServletRequest request, ServletResponse response) throws ServletException, IOException {
+    }
 
-    protected HttpServletRequest request;
+    public void log(String msg) {
+    }
 }

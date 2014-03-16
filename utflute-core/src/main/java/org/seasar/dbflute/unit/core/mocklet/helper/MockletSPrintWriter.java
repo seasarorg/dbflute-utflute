@@ -13,22 +13,21 @@
  * either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.seasar.dbflute.unit.guice.action;
+package org.seasar.dbflute.unit.core.mocklet.helper;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.transaction.TransactionManager;
-
-import org.seasar.dbflute.unit.guice.dbflute.exbhv.FooBhv;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 /**
- * @author jflute
- * @since 0.4.0 (2014/03/16 Sunday)
+ * @author modified by jflute (originated in Seasar)
  */
-public class FooAction {
+public class MockletSPrintWriter extends PrintWriter {
 
-    protected FooBhv fooBhv;
+    public MockletSPrintWriter() {
+        super(new StringWriter());
+    }
 
-    protected TransactionManager transactionManager;
-
-    protected HttpServletRequest request;
+    public String toString() {
+        return out.toString();
+    }
 }

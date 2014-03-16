@@ -21,6 +21,7 @@ import java.util.List;
 import org.seasar.dbflute.unit.core.binding.BoundResult;
 import org.seasar.dbflute.unit.core.binding.ComponentBinder;
 import org.seasar.dbflute.unit.core.binding.ComponentProvider;
+import org.seasar.dbflute.unit.core.mocklet.Mocklet;
 import org.seasar.dbflute.unit.core.transaction.TransactionFailureException;
 import org.seasar.dbflute.unit.core.transaction.TransactionResource;
 
@@ -275,7 +276,9 @@ public abstract class InjectionTestCase extends PlainTestCase {
             if (mockInstance == bean) { // check instance so uses '=='
                 continue;
             }
-            inject(mockInstance);
+            if (isInjectionTargetMock(mockInstance)) {
+                inject(mockInstance);
+            }
             componentBinder.addMockInstance(mockInstance);
         }
         // adjust no binding components
@@ -288,6 +291,10 @@ public abstract class InjectionTestCase extends PlainTestCase {
             componentBinder.addNonBindingType(nonBindingType);
         }
         return componentBinder;
+    }
+
+    protected boolean isInjectionTargetMock(Object mockInstance) {
+        return !(mockInstance instanceof Mocklet);
     }
 
     /**

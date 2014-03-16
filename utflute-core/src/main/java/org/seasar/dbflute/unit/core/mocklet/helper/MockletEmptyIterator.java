@@ -13,22 +13,29 @@
  * either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.seasar.dbflute.unit.guice.action;
+package org.seasar.dbflute.unit.core.mocklet.helper;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.transaction.TransactionManager;
-
-import org.seasar.dbflute.unit.guice.dbflute.exbhv.FooBhv;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
- * @author jflute
- * @since 0.4.0 (2014/03/16 Sunday)
+ * @param <ELEMENT> The type of element.
+ * @author modified by jflute (originated in Seasar)
  */
-public class FooAction {
+public class MockletEmptyIterator<ELEMENT> implements Iterator<ELEMENT> {
 
-    protected FooBhv fooBhv;
+    public MockletEmptyIterator() {
+    }
 
-    protected TransactionManager transactionManager;
+    public void remove() {
+        throw new IllegalStateException();
+    }
 
-    protected HttpServletRequest request;
+    public boolean hasNext() {
+        return false;
+    }
+
+    public ELEMENT next() {
+        throw new NoSuchElementException();
+    }
 }

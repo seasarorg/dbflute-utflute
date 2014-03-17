@@ -15,16 +15,11 @@
  */
 package org.seasar.dbflute.unit.core.binding;
 
-import java.lang.annotation.Annotation;
-import java.util.Set;
-
 /**
  * @author jflute
  * @since 0.1.2 (2011/09/16 Friday)
  */
 public interface ComponentProvider {
-
-    Set<Class<? extends Annotation>> getBindingAnnotationSet();
 
     <COMPONENT> COMPONENT provideComponent(Class<COMPONENT> type);
 

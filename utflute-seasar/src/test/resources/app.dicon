@@ -4,5 +4,5 @@
 <components>
 	<include path="convention.dicon"/>
 	<include path="j2ee.dicon"/>
-	<include path="bean.dicon"/>
+	<include path="unitbean.dicon"/>
 </components>

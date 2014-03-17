@@ -20,7 +20,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import javax.annotation.Resource;
 
@@ -29,6 +29,7 @@ import org.seasar.dbflute.helper.beans.DfBeanDesc;
 import org.seasar.dbflute.helper.beans.DfPropertyDesc;
 import org.seasar.dbflute.helper.beans.factory.DfBeanDescFactory;
 import org.seasar.dbflute.util.DfCollectionUtil;
+import org.seasar.dbflute.util.Srl;
 
 /**
  * @author jflute
@@ -40,19 +41,22 @@ public class ComponentBinder {
     //                                                                           Attribute
     //                                                                           =========
     protected final ComponentProvider _componentProvider;
-    protected final Set<Class<? extends Annotation>> _bindingAnnotationSet;
+    protected final BindingAnnotationHandler _bindingAnnotationHandler;
+    protected final Map<Class<? extends Annotation>, BindingAnnotationRule> _bindingAnnotationRuleMap;
     protected Class<?> _terminalSuperClass;
-    protected boolean _looseInjection;
-    protected boolean _byTypeInterfaceOnly;
+    protected boolean _annotationOnlyBinding; // e.g. for Guice
+    protected boolean _byTypeInterfaceOnly; // e.g. for Seasar
+    protected boolean _looseBinding; // for test-case class
     protected final List<Object> _mockInstanceList = DfCollectionUtil.newArrayList();
     protected final List<Class<?>> _nonBindingTypeList = DfCollectionUtil.newArrayList();
 
     // ===================================================================================
     //                                                                         Constructor
     //                                                                         ===========
-    public ComponentBinder(ComponentProvider componentProvider) {
+    public ComponentBinder(ComponentProvider componentProvider, BindingAnnotationHandler bindingAnnotationHandler) {
         _componentProvider = componentProvider;
-        _bindingAnnotationSet = _componentProvider.getBindingAnnotationSet();
+        _bindingAnnotationHandler = bindingAnnotationHandler;
+        _bindingAnnotationRuleMap = _bindingAnnotationHandler.provideBindingAnnotationRuleMap(); // cached
     }
 
     // ===================================================================================
@@ -62,12 +66,16 @@ public class ComponentBinder {
         _terminalSuperClass = terminalSuperClass;
     }
 
-    public void looseInjection() {
-        _looseInjection = true;
+    public void annotationOnlyBinding() {
+        _annotationOnlyBinding = true;
     }
 
     public void byTypeInterfaceOnly() {
         _byTypeInterfaceOnly = true;
+    }
+
+    public void looseBinding() {
+        _looseBinding = true;
     }
 
     public void addMockInstance(Object mockInstance) {
@@ -118,18 +126,21 @@ public class ComponentBinder {
         if (!isModifiersAutoBindable(field)) {
             return;
         }
-        final Annotation bindingAnnotation = findBindingAnnotation(field);
-        if (bindingAnnotation != null || _looseInjection) {
+        final Annotation bindingAnno = findBindingAnnotation(field); // might be null
+        if (bindingAnno != null || _looseBinding) {
             field.setAccessible(true);
+            final Class<?> fieldType = field.getType();
+            if (isNonBindingType(fieldType)) {
+                return;
+            }
+            if (isNonBindingAnnotation(bindingAnno)) {
+                return;
+            }
             if (getFieldValue(field, bean) != null) {
                 return;
             }
-            final Class<?> type = field.getType();
-            if (isNonBindingType(type)) {
-                return;
-            }
-            final String specifiedName = extractSpecifiedName(bindingAnnotation);
-            final Object component = findInjectedComponent(field.getName(), type, specifiedName);
+            final String specifiedName = extractSpecifiedName(bindingAnno);
+            final Object component = findInjectedComponent(field.getName(), fieldType, bindingAnno, specifiedName);
             if (component != null) {
                 setFieldValue(field, bean, component);
                 boundResult.addBoundField(field);
@@ -158,31 +169,26 @@ public class ComponentBinder {
         if (!propertyDesc.isWritable()) {
             return;
         }
-        if (propertyDesc.isReadable() && propertyDesc.getValue(bean) != null) {
-            return;
-        }
         final Class<?> propertyType = propertyDesc.getPropertyType();
         if (isNonBindingType(propertyType)) {
             return;
         }
-        final Method readMethod = propertyDesc.getReadMethod();
-        if (readMethod != null && !isBindTargetClass(readMethod.getDeclaringClass())) {
+        final Method writeMethod = propertyDesc.getWriteMethod(); // not null here
+        final Annotation bindingAnno = findBindingAnnotation(writeMethod); // might be null
+        if (_annotationOnlyBinding && bindingAnno == null) {
+            return; // e.g. Guice needs annotation to setter
+        }
+        if (isNonBindingAnnotation(bindingAnno)) {
             return;
         }
-        final Method writeMethod = propertyDesc.getWriteMethod();
-        if (writeMethod != null && !isBindTargetClass(writeMethod.getDeclaringClass())) {
+        if (!isBindTargetClass(writeMethod.getDeclaringClass())) {
             return;
         }
-        String specifiedName = null;
-        if (readMethod != null) {
-            final Annotation annotation = findBindingAnnotation(readMethod);
-            specifiedName = extractSpecifiedName(annotation);
+        if (propertyDesc.isReadable() && propertyDesc.getValue(bean) != null) {
+            return;
         }
-        if (specifiedName == null && writeMethod != null) {
-            final Annotation annotation = findBindingAnnotation(writeMethod);
-            specifiedName = extractSpecifiedName(annotation);
-        }
-        final Object component = findInjectedComponent(propertyName, propertyType, specifiedName);
+        final String specifiedName = extractSpecifiedName(bindingAnno);
+        final Object component = findInjectedComponent(propertyName, propertyType, bindingAnno, specifiedName);
         if (component == null) {
             return;
         }
@@ -193,10 +199,14 @@ public class ComponentBinder {
     // -----------------------------------------------------
     //                                        Find Component
     //                                        --------------
-    protected Object findInjectedComponent(String propertyName, Class<?> propertyType, String specifiedName) {
+    protected Object findInjectedComponent(String propertyName, Class<?> propertyType, Annotation bindingAnno,
+            String specifiedName) {
         Object component = findMockInstance(propertyType);
         if (component != null) {
             return component;
+        }
+        if (isFindingByNameOnlyProperty(propertyName, propertyType, bindingAnno)) {
+            return doFindInjectedComponentByName(propertyName, specifiedName);
         }
         if (hasComponent(propertyType)) {
             component = getComponent(propertyType);
@@ -204,14 +214,32 @@ public class ComponentBinder {
         if (component != null) {
             return component;
         }
-        if (_byTypeInterfaceOnly && propertyType.isInterface()) {
+        if (isByTypeOnlyAnnotation(bindingAnno)) {
             return null;
         }
-        final String name = specifiedName != null ? specifiedName : normalizeName(propertyName);
-        if (hasComponent(name)) {
-            component = getComponent(name);
+        return doFindInjectedComponentByName(propertyName, specifiedName);
+    }
+
+    protected boolean isFindingByNameOnlyProperty(String propertyName, Class<?> propertyType, Annotation bindingAnno) {
+        if (_looseBinding) {
+            return false;
         }
-        return component;
+        if (isByNameOnlyAnnotation(bindingAnno)) {
+            return true;
+        }
+        if (isLimitedPropertyAsByTypeInterfaceOnly(propertyName, propertyType)) {
+            return true;
+        }
+        return false;
+    }
+
+    protected boolean isLimitedPropertyAsByTypeInterfaceOnly(String propertyName, Class<?> propertyType) {
+        return _byTypeInterfaceOnly && !propertyType.isInterface();
+    }
+
+    protected Object doFindInjectedComponentByName(String propertyName, String specifiedName) {
+        final String name = specifiedName != null ? specifiedName : normalizeName(propertyName);
+        return hasComponent(name) ? getComponent(name) : null;
     }
 
     protected Object findMockInstance(Class<?> type) {
@@ -225,7 +253,10 @@ public class ComponentBinder {
     }
 
     protected String normalizeName(String name) {
-        return name.startsWith("_") ? name.substring("_".length()) : name;
+        if (_looseBinding) {
+            return name.startsWith("_") ? name.substring("_".length()) : name;
+        }
+        return name;
     }
 
     // -----------------------------------------------------
@@ -240,15 +271,38 @@ public class ComponentBinder {
     }
 
     protected Annotation doFindBindingAnnotation(Annotation[] annotations) {
-        if (annotations == null || _bindingAnnotationSet == null) { // just in case
+        if (annotations == null || _bindingAnnotationRuleMap == null) { // just in case
             return null;
         }
         for (Annotation annotation : annotations) {
-            if (_bindingAnnotationSet.contains(annotation.annotationType())) {
+            if (_bindingAnnotationRuleMap.containsKey(annotation.annotationType())) {
                 return annotation;
             }
         }
         return null;
+    }
+
+    protected boolean isNonBindingAnnotation(Annotation bindingAnno) {
+        final BindingAnnotationRule rule = findBindingAnnotationRule(bindingAnno);
+        if (rule == null) {
+            return false;
+        }
+        final NonBindingDeterminer determiner = rule.getNonBindingDeterminer();
+        return determiner != null && determiner.isNonBinding(bindingAnno);
+    }
+
+    protected boolean isByNameOnlyAnnotation(Annotation bindingAnno) {
+        final BindingAnnotationRule rule = findBindingAnnotationRule(bindingAnno);
+        return rule != null && rule.isByNameOnly();
+    }
+
+    protected boolean isByTypeOnlyAnnotation(Annotation bindingAnno) {
+        final BindingAnnotationRule rule = findBindingAnnotationRule(bindingAnno);
+        return rule != null && rule.isByTypeOnly();
+    }
+
+    protected BindingAnnotationRule findBindingAnnotationRule(Annotation bindingAnno) {
+        return bindingAnno != null ? _bindingAnnotationRuleMap.get(bindingAnno.annotationType()) : null;
     }
 
     // -----------------------------------------------------
@@ -271,9 +325,9 @@ public class ComponentBinder {
     protected String extractSpecifiedName(Annotation bindingAnnotation) {
         String specifiedName = null;
         if (bindingAnnotation instanceof Resource) {
-            specifiedName = ((Resource) bindingAnnotation).name();
+            specifiedName = ((Resource) bindingAnnotation).name(); // might be empty string
         }
-        return specifiedName;
+        return Srl.is_NotNull_and_NotTrimmedEmpty(specifiedName) ? specifiedName : null;
     }
 
     // -----------------------------------------------------

@@ -25,6 +25,7 @@ import org.seasar.dbflute.util.DfResourceUtil;
  * The bean for resolving a path to a database of H2 Database. <br />
  * This is NOT an important class as example. So you don't need to read this.
  * @author jflute
+ * @since 0.4.0 (2014/03/16 Sunday)
  */
 public class EmbeddedH2UrlFactoryBean {
 

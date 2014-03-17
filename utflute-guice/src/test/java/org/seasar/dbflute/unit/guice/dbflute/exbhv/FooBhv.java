@@ -29,6 +29,7 @@ public class FooBhv {
         return transactionManager;
     }
 
+    @com.google.inject.Inject
     public void setTransactionManager(TransactionManager transactionManager) {
         this.transactionManager = transactionManager;
     }

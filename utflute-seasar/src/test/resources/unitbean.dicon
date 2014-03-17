@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE components PUBLIC "-//SEASAR//DTD S2Container 2.4//EN"
+	"http://www.seasar.org/dtd/components24.dtd">
+<components>
+	<include path="j2ee.dicon"/>
+
+	<!-- prototype mock like creator -->
+	<component name="fooController" class="org.seasar.dbflute.unit.seasar.bean.FooControllerImpl" instance="prototype"/>
+	<component name="fooFacade" class="org.seasar.dbflute.unit.seasar.bean.FooFacade" instance="prototype"/>
+	<component name="fooLogic" class="org.seasar.dbflute.unit.seasar.bean.FooLogic" instance="prototype"/>
+	<component name="fooService" class="org.seasar.dbflute.unit.seasar.bean.FooService" instance="prototype"/>
+
+	<!-- DBFlute mock -->
+	<component name="fooBhv" class="org.seasar.dbflute.unit.seasar.dbflute.exbhv.FooBhv"/>
+</components>

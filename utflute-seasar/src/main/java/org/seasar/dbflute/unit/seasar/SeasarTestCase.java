@@ -16,10 +16,12 @@
 package org.seasar.dbflute.unit.seasar;
 
 import java.lang.annotation.Annotation;
-import java.util.Set;
+import java.util.Map;
 
 import javax.annotation.Resource;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import javax.transaction.NotSupportedException;
 import javax.transaction.Status;
 import javax.transaction.SystemException;
@@ -27,19 +29,26 @@ import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 
 import org.seasar.dbflute.unit.core.InjectionTestCase;
+import org.seasar.dbflute.unit.core.binding.BindingAnnotationRule;
 import org.seasar.dbflute.unit.core.binding.ComponentBinder;
-import org.seasar.dbflute.unit.core.mocklet.MockletHttpServletRequest;
-import org.seasar.dbflute.unit.core.mocklet.MockletHttpServletResponse;
-import org.seasar.dbflute.unit.core.mocklet.MockletServletConfig;
-import org.seasar.dbflute.unit.core.mocklet.MockletServletContext;
+import org.seasar.dbflute.unit.core.binding.NonBindingDeterminer;
 import org.seasar.dbflute.unit.core.transaction.TransactionFailureException;
 import org.seasar.dbflute.unit.core.transaction.TransactionResource;
+import org.seasar.dbflute.unit.mocklet.MockletHttpServletRequest;
+import org.seasar.dbflute.unit.mocklet.MockletHttpServletRequestImpl;
+import org.seasar.dbflute.unit.mocklet.MockletHttpServletResponse;
+import org.seasar.dbflute.unit.mocklet.MockletHttpServletResponseImpl;
+import org.seasar.dbflute.unit.mocklet.MockletServletConfig;
+import org.seasar.dbflute.unit.mocklet.MockletServletConfigImpl;
+import org.seasar.dbflute.unit.mocklet.MockletServletContext;
+import org.seasar.dbflute.unit.mocklet.MockletServletContextImpl;
 import org.seasar.framework.container.ComponentNotFoundRuntimeException;
 import org.seasar.framework.container.ExternalContext;
 import org.seasar.framework.container.S2Container;
 import org.seasar.framework.container.SingletonS2Container;
 import org.seasar.framework.container.TooManyRegistrationRuntimeException;
 import org.seasar.framework.container.annotation.tiger.Binding;
+import org.seasar.framework.container.annotation.tiger.BindingType;
 import org.seasar.framework.container.factory.SingletonS2ContainerFactory;
 import org.seasar.framework.container.servlet.S2ContainerServlet;
 import org.seasar.framework.env.Env;
@@ -186,6 +195,18 @@ public abstract class SeasarTestCase extends InjectionTestCase {
         return binder;
     }
 
+    @Override
+    protected Map<Class<? extends Annotation>, BindingAnnotationRule> xprovideBindingAnnotationRuleMap() {
+        final Map<Class<? extends Annotation>, BindingAnnotationRule> ruleMap = newHashMap();
+        ruleMap.put(Resource.class, new BindingAnnotationRule());
+        ruleMap.put(Binding.class, new BindingAnnotationRule().determineNonBinding(new NonBindingDeterminer() {
+            public boolean isNonBinding(Annotation bindingAnno) {
+                return BindingType.NONE.equals(((Binding) bindingAnno).bindingType());
+            }
+        }));
+        return ruleMap;
+    }
+
     // ===================================================================================
     //                                                                     Seasar Handling
     //                                                                     ===============
@@ -205,6 +226,7 @@ public abstract class SeasarTestCase extends InjectionTestCase {
         if (isSuppressWebMock()) { // library
             xdoInitializeContainerAsLibrary(configFile);
         } else { // web
+            // Seasar contains web components as default
             xdoInitializeContainerAsWeb(configFile);
         }
     }
@@ -250,20 +272,31 @@ public abstract class SeasarTestCase extends InjectionTestCase {
         externalContext.setResponse(response);
     }
 
+    protected MockletServletConfig createMockletServletConfig() {
+        return new MockletServletConfigImpl();
+    }
+
+    protected MockletServletContext createMockletServletContext() {
+        return new MockletServletContextImpl("utservlet");
+    }
+
+    protected MockletHttpServletRequest createMockletHttpServletRequest(ServletContext servletContext) {
+        return new MockletHttpServletRequestImpl(servletContext, prepareServletPath());
+    }
+
+    protected MockletHttpServletResponse createMockletHttpServletResponse(HttpServletRequest request) {
+        return new MockletHttpServletResponseImpl(request);
+    }
+
+    protected String prepareServletPath() { // customize point
+        return "/utflute";
+    }
+
     // -----------------------------------------------------
     //                                               Destroy
     //                                               -------
     protected void xdestroyContainer() {
         SingletonS2ContainerFactory.destroy();
-    }
-
-    // -----------------------------------------------------
-    //                                               Binding
-    //                                               -------
-    @Override
-    @SuppressWarnings("unchecked")
-    protected Set<Class<? extends Annotation>> xgetBindingAnnotationSet() {
-        return newHashSet(Resource.class, Binding.class);
     }
 
     // -----------------------------------------------------

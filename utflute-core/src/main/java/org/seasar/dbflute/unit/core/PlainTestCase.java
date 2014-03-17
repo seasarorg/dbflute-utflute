@@ -548,7 +548,7 @@ public abstract class PlainTestCase extends TestCase {
     // ===================================================================================
     //                                                                         Show Helper
     //                                                                         ===========
-    protected void showPage(PagingResultBean<? extends Object>... pages) {
+    protected void showPage(PagingResultBean<?>... pages) {
         int count = 1;
         for (PagingResultBean<? extends Object> page : pages) {
             log("[page" + count + "]");
@@ -559,9 +559,9 @@ public abstract class PlainTestCase extends TestCase {
         }
     }
 
-    protected void showList(List<? extends Object>... lss) {
+    protected void showList(List<?>... list) {
         int count = 1;
-        for (List<? extends Object> ls : lss) {
+        for (List<? extends Object> ls : list) {
             log("[list" + count + "]");
             for (Object entity : ls) {
                 log("  " + entity);

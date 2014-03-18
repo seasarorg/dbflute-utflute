@@ -41,7 +41,7 @@ public class ComponentBinder {
     //                                                                           Attribute
     //                                                                           =========
     protected final ComponentProvider _componentProvider;
-    protected final BindingAnnotationHandler _bindingAnnotationHandler;
+    protected final BindingRuleProvider _bindingAnnotationProvider;
     protected final Map<Class<? extends Annotation>, BindingAnnotationRule> _bindingAnnotationRuleMap;
     protected Class<?> _terminalSuperClass;
     protected boolean _annotationOnlyBinding; // e.g. for Guice
@@ -53,10 +53,10 @@ public class ComponentBinder {
     // ===================================================================================
     //                                                                         Constructor
     //                                                                         ===========
-    public ComponentBinder(ComponentProvider componentProvider, BindingAnnotationHandler bindingAnnotationHandler) {
+    public ComponentBinder(ComponentProvider componentProvider, BindingRuleProvider bindingAnnotationProvider) {
         _componentProvider = componentProvider;
-        _bindingAnnotationHandler = bindingAnnotationHandler;
-        _bindingAnnotationRuleMap = _bindingAnnotationHandler.provideBindingAnnotationRuleMap(); // cached
+        _bindingAnnotationProvider = bindingAnnotationProvider;
+        _bindingAnnotationRuleMap = _bindingAnnotationProvider.provideBindingAnnotationRuleMap(); // cached
     }
 
     // ===================================================================================
@@ -70,12 +70,24 @@ public class ComponentBinder {
         _annotationOnlyBinding = true;
     }
 
+    public void cancelAnnotationOnlyBinding() {
+        _annotationOnlyBinding = false;
+    }
+
     public void byTypeInterfaceOnly() {
         _byTypeInterfaceOnly = true;
     }
 
+    public void cancelByTypeInterfaceOnly() {
+        _byTypeInterfaceOnly = false;
+    }
+
     public void looseBinding() {
         _looseBinding = true;
+    }
+
+    public void cancelLooseBinding() {
+        _looseBinding = false;
     }
 
     public void addMockInstance(Object mockInstance) {
@@ -139,8 +151,7 @@ public class ComponentBinder {
             if (getFieldValue(field, bean) != null) {
                 return;
             }
-            final String specifiedName = extractSpecifiedName(bindingAnno);
-            final Object component = findInjectedComponent(field.getName(), fieldType, bindingAnno, specifiedName);
+            final Object component = findInjectedComponent(field.getName(), fieldType, bindingAnno);
             if (component != null) {
                 setFieldValue(field, bean, component);
                 boundResult.addBoundField(field);
@@ -173,7 +184,10 @@ public class ComponentBinder {
         if (isNonBindingType(propertyType)) {
             return;
         }
-        final Method writeMethod = propertyDesc.getWriteMethod(); // not null here
+        final Method writeMethod = propertyDesc.getWriteMethod();
+        if (writeMethod == null) { // public field
+            return; // unsupported fixedly
+        }
         final Annotation bindingAnno = findBindingAnnotation(writeMethod); // might be null
         if (_annotationOnlyBinding && bindingAnno == null) {
             return; // e.g. Guice needs annotation to setter
@@ -187,8 +201,7 @@ public class ComponentBinder {
         if (propertyDesc.isReadable() && propertyDesc.getValue(bean) != null) {
             return;
         }
-        final String specifiedName = extractSpecifiedName(bindingAnno);
-        final Object component = findInjectedComponent(propertyName, propertyType, bindingAnno, specifiedName);
+        final Object component = findInjectedComponent(propertyName, propertyType, bindingAnno);
         if (component == null) {
             return;
         }
@@ -199,14 +212,13 @@ public class ComponentBinder {
     // -----------------------------------------------------
     //                                        Find Component
     //                                        --------------
-    protected Object findInjectedComponent(String propertyName, Class<?> propertyType, Annotation bindingAnno,
-            String specifiedName) {
+    protected Object findInjectedComponent(String propertyName, Class<?> propertyType, Annotation bindingAnno) {
         Object component = findMockInstance(propertyType);
         if (component != null) {
             return component;
         }
         if (isFindingByNameOnlyProperty(propertyName, propertyType, bindingAnno)) {
-            return doFindInjectedComponentByName(propertyName, specifiedName);
+            return doFindInjectedComponentByName(propertyName, propertyType, bindingAnno);
         }
         if (hasComponent(propertyType)) {
             component = getComponent(propertyType);
@@ -217,7 +229,7 @@ public class ComponentBinder {
         if (isByTypeOnlyAnnotation(bindingAnno)) {
             return null;
         }
-        return doFindInjectedComponentByName(propertyName, specifiedName);
+        return doFindInjectedComponentByName(propertyName, propertyType, bindingAnno);
     }
 
     protected boolean isFindingByNameOnlyProperty(String propertyName, Class<?> propertyType, Annotation bindingAnno) {
@@ -225,6 +237,9 @@ public class ComponentBinder {
             return false;
         }
         if (isByNameOnlyAnnotation(bindingAnno)) {
+            return true;
+        }
+        if (extractSpecifiedName(bindingAnno) != null) {
             return true;
         }
         if (isLimitedPropertyAsByTypeInterfaceOnly(propertyName, propertyType)) {
@@ -237,8 +252,20 @@ public class ComponentBinder {
         return _byTypeInterfaceOnly && !propertyType.isInterface();
     }
 
-    protected Object doFindInjectedComponentByName(String propertyName, String specifiedName) {
-        final String name = specifiedName != null ? specifiedName : normalizeName(propertyName);
+    protected Object doFindInjectedComponentByName(String propertyName, Class<?> propertyType, Annotation bindingAnno) {
+        final String specifiedName = extractSpecifiedName(bindingAnno);
+        final String realName;
+        if (specifiedName != null) {
+            realName = specifiedName;
+        } else {
+            final String normalized = normalizeName(propertyName);
+            final String filtered = _bindingAnnotationProvider.filterByBindingNamingRule(normalized, propertyType);
+            realName = filtered != null ? filtered : normalized;
+        }
+        return actuallyFindInjectedComponentByName(realName);
+    }
+
+    protected Object actuallyFindInjectedComponentByName(String name) {
         return hasComponent(name) ? getComponent(name) : null;
     }
 
@@ -324,7 +351,7 @@ public class ComponentBinder {
 
     protected String extractSpecifiedName(Annotation bindingAnnotation) {
         String specifiedName = null;
-        if (bindingAnnotation instanceof Resource) {
+        if (bindingAnnotation instanceof Resource) { // only standard annotation here for now
             specifiedName = ((Resource) bindingAnnotation).name(); // might be empty string
         }
         return Srl.is_NotNull_and_NotTrimmedEmpty(specifiedName) ? specifiedName : null;

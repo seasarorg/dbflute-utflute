@@ -42,6 +42,7 @@ import org.seasar.dbflute.unit.mocklet.MockletServletConfig;
 import org.seasar.dbflute.unit.mocklet.MockletServletConfigImpl;
 import org.seasar.dbflute.unit.mocklet.MockletServletContext;
 import org.seasar.dbflute.unit.mocklet.MockletServletContextImpl;
+import org.seasar.dbflute.util.Srl;
 import org.seasar.framework.container.ComponentNotFoundRuntimeException;
 import org.seasar.framework.container.ExternalContext;
 import org.seasar.framework.container.S2Container;
@@ -51,6 +52,7 @@ import org.seasar.framework.container.annotation.tiger.Binding;
 import org.seasar.framework.container.annotation.tiger.BindingType;
 import org.seasar.framework.container.factory.SingletonS2ContainerFactory;
 import org.seasar.framework.container.servlet.S2ContainerServlet;
+import org.seasar.framework.convention.NamingConvention;
 import org.seasar.framework.env.Env;
 
 /**
@@ -205,6 +207,37 @@ public abstract class SeasarTestCase extends InjectionTestCase {
             }
         }));
         return ruleMap;
+    }
+
+    @Override
+    protected String xfilterByBindingNamingRule(String propertyName, Class<?> propertyType) {
+        // e.g. [root].logic.foo.bar.QuxLogic
+        final String packageExp = Srl.substringLastFront(propertyType.getName(), ".");
+        final NamingConvention convention = getComponent(NamingConvention.class);
+        try {
+            final String componentName = convention.fromClassNameToComponentName(propertyType.getName());
+            if (componentName.endsWith(propertyName)) { // e.g. foo_bar_quxLogic ends with quxLogic
+                return componentName;
+            }
+            // e.g. foo_bar_quxLogic ends with quxService but the class exists in container
+        } catch (RuntimeException ignored) { // unfortunately no exception that means not found explicitly
+            // the class does not exist in container
+        }
+        // deriving component name (might be already unnecessary...but just in case)
+        final String[] packageNames = convention.getRootPackageNames();
+        for (String rootPackage : packageNames) {
+            if (packageExp.startsWith(rootPackage)) {
+                continue;
+            }
+            // e.g. [root].logic.foo.bar -> logic.foo.bar -> foo.bar -> foo_bar -> foo_bar_QuxLogic
+            if (packageExp.startsWith(rootPackage + ".")) {
+                final String rearPackage = Srl.trim(Srl.substringFirstRear(packageExp, rootPackage), ".");
+                final String nextRearPackage = Srl.substringFirstRear(rearPackage, "."); // remove e.g. logic
+                final String packagePrefix = Srl.replace(nextRearPackage, ".", "_"); // foo.bar -> foo_bar
+                return packagePrefix + "_" + propertyName; // e.g. foo_bar_QuxLogic
+            }
+        }
+        return null;
     }
 
     // ===================================================================================

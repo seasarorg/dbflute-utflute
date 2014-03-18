@@ -62,7 +62,7 @@ public class SmartDeployDependencyChecker implements PoliceStoryJavaClassHandler
             if (checkInjectionField(clazz, field, injectedType)) {
                 continue;
             }
-            throwInjectionFieldNameDifferentException(clazz, field, injectedType);
+            throwInjectionPropertyNameDifferentException(clazz, field, injectedType);
         }
     }
 
@@ -83,17 +83,17 @@ public class SmartDeployDependencyChecker implements PoliceStoryJavaClassHandler
     }
 
     protected boolean checkInjectionField(Class<?> clazz, Field field, Class<?> injectedType) { // customize point
-        final String expectedFieldName = extractExpectedFieldName(injectedType);
+        final String expectedFieldName = extractExpectedPropertyName(injectedType);
         return expectedFieldName.equals(field.getName());
     }
 
-    protected void throwInjectionFieldNameDifferentException(Class<?> clazz, Field field, Class<?> injectedType) {
-        final String expectedFieldName = extractExpectedFieldName(injectedType);
+    protected void throwInjectionPropertyNameDifferentException(Class<?> clazz, Field field, Class<?> injectedType) {
+        final String expectedPropertyName = extractExpectedPropertyName(injectedType);
         final ExceptionMessageBuilder br = new ExceptionMessageBuilder();
         final String uncapTitle = Srl.initUncap(_title);
-        br.addNotice("The injected " + uncapTitle + " different from field name was found.");
+        br.addNotice("The injection property was different from the " + uncapTitle + " name.");
         br.addItem("Advice");
-        br.addElement("The property name (field name) should be same as");
+        br.addElement("The property name (e.g. field name) should be same as");
         br.addElement(uncapTitle + " class name (initial character is uncapitalised) like this:");
         br.addElement("  (x):");
         br.addElement("    @Resource");
@@ -101,11 +101,10 @@ public class SmartDeployDependencyChecker implements PoliceStoryJavaClassHandler
         br.addElement("  (o):");
         br.addElement("    @Resource");
         br.addElement("    protected Foo" + _suffix + " foo" + _suffix + ";");
-        br.addItem("Base Class");
+        br.addItem("Injection Property");
         br.addElement(clazz.getName());
-        br.addItem("Injection Field");
         br.addElement(field.getName());
-        br.addElement("(expected: " + expectedFieldName + ")");
+        br.addElement("(expected: " + expectedPropertyName + ")");
         br.addItem(_title + " Class");
         br.addElement(injectedType.getName());
         final String msg = br.buildExceptionMessage();
@@ -116,7 +115,7 @@ public class SmartDeployDependencyChecker implements PoliceStoryJavaClassHandler
         return injectedType.getSimpleName();
     }
 
-    protected String extractExpectedFieldName(Class<?> injectedType) {
+    protected String extractExpectedPropertyName(Class<?> injectedType) {
         return Srl.initUncap(extractInjectedClassName(injectedType));
     }
 }

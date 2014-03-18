@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.seasar.dbflute.unit.core.binding.BindingAnnotationHandler;
 import org.seasar.dbflute.unit.core.binding.BindingAnnotationRule;
+import org.seasar.dbflute.unit.core.binding.BindingRuleProvider;
 import org.seasar.dbflute.unit.core.binding.BoundResult;
 import org.seasar.dbflute.unit.core.binding.ComponentBinder;
 import org.seasar.dbflute.unit.core.binding.ComponentProvider;
@@ -192,7 +192,7 @@ public abstract class InjectionTestCase extends PlainTestCase {
     //                                                Binder
     //                                                ------
     protected ComponentBinder xcreateBasicComponentBinder() { // customize point
-        return new ComponentBinder(xcreateComponentProvider(), createBindingAnnotationHandler());
+        return new ComponentBinder(xcreateComponentProvider(), createBindingRuleProvider());
     }
 
     protected ComponentProvider xcreateComponentProvider() {
@@ -258,15 +258,23 @@ public abstract class InjectionTestCase extends PlainTestCase {
         _xnonBindingTypeList.add(nonBindingType);
     }
 
-    protected BindingAnnotationHandler createBindingAnnotationHandler() {
-        return new BindingAnnotationHandler() {
+    protected BindingRuleProvider createBindingRuleProvider() {
+        return new BindingRuleProvider() {
             public Map<Class<? extends Annotation>, BindingAnnotationRule> provideBindingAnnotationRuleMap() {
                 return xprovideBindingAnnotationRuleMap();
+            }
+
+            public String filterByBindingNamingRule(String propertyName, Class<?> propertyType) {
+                return xfilterByBindingNamingRule(propertyName, propertyType);
             }
         };
     }
 
     protected abstract Map<Class<? extends Annotation>, BindingAnnotationRule> xprovideBindingAnnotationRuleMap();
+    
+    protected String xfilterByBindingNamingRule(String propertyName, Class<?> propertyType) {
+        return null; // as default: means no filter
+    }
 
     // -----------------------------------------------------
     //                                                Inject

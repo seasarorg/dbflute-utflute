@@ -22,11 +22,19 @@ import java.util.Map;
  * @author jflute
  * @since 0.4.0 (2014/03/16 Sunday)
  */
-public interface BindingAnnotationHandler {
+public interface BindingRuleProvider {
 
     /**
      * Get the rule map of binding annotation for the DI container.
      * @return The map of annotation type (key) and rule object (value). (NotNull)
      */
     Map<Class<? extends Annotation>, BindingAnnotationRule> provideBindingAnnotationRuleMap();
+
+    /**
+     * Filter the property name by the binding naming rule for the DI container.
+     * @param propertyName The property name defined for injected component. (NotNull)
+     * @param propertyType The type of the property. (NotNull)
+     * @return The filtered component name of the property. (NullAllowed: if null, no filtering)
+     */
+    String filterByBindingNamingRule(String propertyName, Class<?> propertyType);
 }

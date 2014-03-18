@@ -24,6 +24,7 @@ import javax.servlet.ServletResponse;
 
 /**
  * @author modified by jflute (originated in Seasar)
+ * @since 0.4.0 (2014/03/16 Sunday)
  */
 public class MockletServlet extends GenericServlet implements Mocklet {
 

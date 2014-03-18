@@ -31,7 +31,7 @@ import org.seasar.dbflute.unit.spring.ContainerTestCase;
 
 /**
  * @author jflute
- * @since 0.1.1 (2011/07/25 Monday)
+ * @since 0.4.0 (2014/03/16 Sunday)
  */
 public abstract class WebContainerTestCase extends ContainerTestCase {
 

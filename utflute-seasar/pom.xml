@@ -14,9 +14,7 @@
 	<description>The unit test library for Seasar (with DBFlute)</description>
 
 	<properties>
-		<seasar.version>2.4.46</seasar.version>
 		<sastruts.version>1.0.4-sp9</sastruts.version>
-		<utflute.core.version>0.4.0</utflute.core.version>
 	</properties>
 
 	<dependencies>

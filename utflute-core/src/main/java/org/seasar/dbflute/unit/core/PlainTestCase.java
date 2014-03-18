@@ -32,8 +32,8 @@ import javax.sql.DataSource;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.seasar.dbflute.AccessContext;
 import org.seasar.dbflute.cbean.PagingResultBean;
 import org.seasar.dbflute.unit.core.cannonball.CannonballDirector;
@@ -71,7 +71,11 @@ public abstract class PlainTestCase extends TestCase {
     //                                                                          Definition
     //                                                                          ==========
     /** Log instance for sub class. (NotNull) */
-    protected final Logger _xlogger = Logger.getLogger(getClass());
+    protected final Log _xlogger = LogFactory.getLog(getClass());
+    // UTFlute wants to use logger for caller output
+    // but should remove the dependency to Log4j
+    // (logging through commons-logging gives us fixed caller...)
+    //protected final Logger _xlogger = Logger.getLogger(getClass());
 
     // ===================================================================================
     //                                                                           Attribute
@@ -544,7 +548,14 @@ public abstract class PlainTestCase extends TestCase {
             sb.append(appended);
             ++index;
         }
-        _xlogger.log(PlainTestCase.class.getName(), Level.DEBUG, sb.toString(), cause);
+        final String msg = sb.toString();
+        if (cause != null) {
+            _xlogger.debug(msg, cause);
+        } else {
+            _xlogger.debug(msg);
+        }
+        // see comment for logger definition for the detail
+        //_xlogger.log(PlainTestCase.class.getName(), Level.DEBUG, msg, cause);
     }
 
     // ===================================================================================

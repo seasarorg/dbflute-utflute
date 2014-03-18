@@ -7,6 +7,10 @@ mvn -e clean deploy
 cd ../utflute-core
 . maven-deploy.sh
 
+# Mocklet
+cd ../utflute-mocklet
+. maven-deploy.sh
+
 # Seasar
 cd ../utflute-seasar
 . maven-deploy.sh
@@ -15,6 +19,12 @@ cd ../utflute-seasar
 cd ../utflute-spring
 . maven-deploy.sh
 
+cd ../utflute-spring-web
+. maven-deploy.sh
+
 # Guice
 cd ../utflute-guice
+. maven-deploy.sh
+
+cd ../utflute-guice-web
 . maven-deploy.sh

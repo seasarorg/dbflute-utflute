@@ -12,4 +12,7 @@
 
 	<name>UTFlute Core</name>
 	<description>The core project of unit test library (with DBFlute)</description>
+
+	<dependencies>
+	</dependencies>
 </project>

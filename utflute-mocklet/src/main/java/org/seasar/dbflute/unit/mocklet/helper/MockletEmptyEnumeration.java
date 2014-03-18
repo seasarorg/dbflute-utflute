@@ -18,6 +18,7 @@ package org.seasar.dbflute.unit.mocklet.helper;
 /**
  * @param <ELEMENT> The type of element.
  * @author modified by jflute (originated in Seasar)
+ * @since 0.4.0 (2014/03/16 Sunday)
  */
 public class MockletEmptyEnumeration<ELEMENT> extends MockletEnumerationAdapter<ELEMENT> {
 

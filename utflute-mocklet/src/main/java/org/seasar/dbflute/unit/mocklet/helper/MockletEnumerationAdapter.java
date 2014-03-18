@@ -21,6 +21,7 @@ import java.util.Iterator;
 /**
  * @param <ELEMENT> The type of element.
  * @author modified by jflute (originated in Seasar)
+ * @since 0.4.0 (2014/03/16 Sunday)
  */
 public class MockletEnumerationAdapter<ELEMENT> implements Enumeration<ELEMENT> {
 

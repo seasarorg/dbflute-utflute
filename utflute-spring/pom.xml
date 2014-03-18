@@ -13,11 +13,6 @@
 	<name>UTFlute Spring</name>
 	<description>The unit test library for Spring Framework (with DBFlute)</description>
 
-	<properties>
-		<spring.version>3.0.5.RELEASE</spring.version>
-		<utflute.core.version>0.4.0</utflute.core.version>
-	</properties>
-
 	<dependencies>
 		<!-- =============== -->
 		<!-- |   compile   | -->

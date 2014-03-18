@@ -15,7 +15,11 @@
  */
 package org.seasar.dbflute.unit.seasar;
 
+import java.lang.reflect.Field;
+
 import javax.sql.DataSource;
+
+import org.seasar.dbflute.unit.seasar.dicheck.SmartDeployDependencyChecker;
 
 /**
  * @author jflute
@@ -38,5 +42,38 @@ public abstract class ContainerTestCase extends SeasarTestCase {
     @Override
     protected DataSource getDataSource() { // user method
         return _xdataSource;
+    }
+
+    // ===================================================================================
+    //                                                                  Dependency Checker
+    //                                                                  ==================
+    protected void checkDependencyToLogic() {
+        doCheckDependencyTo("Logic", "Logic");
+    }
+
+    protected void checkDependencyToService() {
+        doCheckDependencyTo("Service", "Service");
+    }
+
+    protected void checkDependencyToHelper() {
+        doCheckDependencyTo("Helper", "Helper");
+    }
+
+    protected void checkDependencyToBehavior() {
+        doCheckDependencyTo("Behavior", "Bhv");
+    }
+
+    protected void doCheckDependencyTo(String title, String suffix) {
+        policeStoryOfJavaClassChase(createSmartDeployDependencyChecker(title, suffix));
+    }
+
+    protected SmartDeployDependencyChecker createSmartDeployDependencyChecker(String title, String suffix) {
+        return new SmartDeployDependencyChecker(title, suffix) {
+            @Override
+            protected void processTargetClass(Class<?> clazz, Field field, Class<?> injectedType) {
+                final String injectedClassName = extractInjectedClassName(injectedType);
+                log(clazz.getSimpleName() + "." + field.getName() + " depends on " + injectedClassName);
+            }
+        };
     }
 }

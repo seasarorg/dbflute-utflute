@@ -15,6 +15,7 @@
  */
 package org.seasar.dbflute.unit.core;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -26,7 +27,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 
 import javax.sql.DataSource;
 
@@ -40,8 +40,15 @@ import org.seasar.dbflute.unit.core.cannonball.CannonballDirector;
 import org.seasar.dbflute.unit.core.cannonball.CannonballOption;
 import org.seasar.dbflute.unit.core.cannonball.CannonballRun;
 import org.seasar.dbflute.unit.core.cannonball.CannonballStaff;
-import org.seasar.dbflute.unit.core.markhere.MarkHereInfo;
+import org.seasar.dbflute.unit.core.filesystem.FileLineHandler;
+import org.seasar.dbflute.unit.core.filesystem.FilesystemPlayer;
 import org.seasar.dbflute.unit.core.markhere.MarkHereManager;
+import org.seasar.dbflute.unit.core.policestory.PoliceStory;
+import org.seasar.dbflute.unit.core.policestory.javaclass.PoliceStoryJavaClassHandler;
+import org.seasar.dbflute.unit.core.policestory.jspfile.PoliceStoryJspFileHandler;
+import org.seasar.dbflute.unit.core.policestory.miscfile.PoliceStoryMiscFileHandler;
+import org.seasar.dbflute.unit.core.policestory.pjresource.PoliceStoryProjectResourceHandler;
+import org.seasar.dbflute.unit.core.policestory.webresource.PoliceStoryWebResourceHandler;
 import org.seasar.dbflute.unit.core.thread.ThreadFireExecution;
 import org.seasar.dbflute.unit.core.thread.ThreadFireHelper;
 import org.seasar.dbflute.unit.core.thread.ThreadFireMan;
@@ -50,6 +57,7 @@ import org.seasar.dbflute.unit.core.transaction.TransactionPerformFailureExcepti
 import org.seasar.dbflute.unit.core.transaction.TransactionPerformer;
 import org.seasar.dbflute.unit.core.transaction.TransactionResource;
 import org.seasar.dbflute.util.DfCollectionUtil;
+import org.seasar.dbflute.util.DfResourceUtil;
 import org.seasar.dbflute.util.DfStringUtil;
 import org.seasar.dbflute.util.DfTypeUtil;
 
@@ -68,11 +76,8 @@ public abstract class PlainTestCase extends TestCase {
     // ===================================================================================
     //                                                                           Attribute
     //                                                                           =========
-    /** The map of mark to assert that it goes through the road. (NullAllowed: when no mark) */
-    protected Map<String, MarkHereInfo> _xmarkMap; // lazy-loaded
-
-    /** The manager of trace mark. (NotNull) */
-    protected final MarkHereManager _xtraceMarkManager = new MarkHereManager();
+    /** The manager of mark here. (NullAllowed: lazy-loaded) */
+    protected MarkHereManager _xmarkHereManager;
 
     // ===================================================================================
     //                                                                            Settings
@@ -87,7 +92,7 @@ public abstract class PlainTestCase extends TestCase {
     protected void tearDown() throws Exception {
         super.tearDown();
         xclearAccessContext();
-        xclearMarkMap();
+        xclearMark();
     }
 
     protected void xprepareAccessContext() {
@@ -111,11 +116,11 @@ public abstract class PlainTestCase extends TestCase {
         AccessContext.clearAccessContextOnThread();
     }
 
-    protected void xclearMarkMap() {
-        if (_xmarkMap != null) {
-            _xtraceMarkManager.checkNonAssertedMark(_xmarkMap);
-            _xmarkMap.clear();
-            _xmarkMap = null;
+    protected void xclearMark() {
+        if (xhasMarkHereManager()) {
+            xgetMarkHereManager().checkNonAssertedMark();
+            xgetMarkHereManager().clearMarkMap();
+            xdestroyMarkHereManager();
         }
     }
 
@@ -444,17 +449,7 @@ public abstract class PlainTestCase extends TestCase {
      */
     protected void markHere(String mark) {
         assertNotNull(mark);
-        if (_xmarkMap == null) {
-            _xmarkMap = new LinkedHashMap<String, MarkHereInfo>();
-        }
-        MarkHereInfo info = _xmarkMap.get(mark);
-        if (info == null) {
-            info = new MarkHereInfo();
-            _xmarkMap.put(mark, info);
-            info.setMark(mark);
-        }
-        info.incrementCount();
-        _xmarkMap.put(mark, info);
+        xgetMarkHereManager().mark(mark);
     }
 
     /**
@@ -470,7 +465,8 @@ public abstract class PlainTestCase extends TestCase {
      * @param mark The your original mark expression as string. (NotNull)
      */
     protected void assertMarked(String mark) {
-        _xtraceMarkManager.assertMarked(_xmarkMap, mark);
+        assertNotNull(mark);
+        xgetMarkHereManager().assertMarked(mark);
     }
 
     /**
@@ -479,7 +475,23 @@ public abstract class PlainTestCase extends TestCase {
      * @return The determination, true or false.
      */
     protected boolean isMarked(String mark) {
-        return _xmarkMap != null && _xmarkMap.get(mark) != null;
+        assertNotNull(mark);
+        return xgetMarkHereManager().isMarked(mark);
+    }
+
+    protected MarkHereManager xgetMarkHereManager() {
+        if (_xmarkHereManager == null) {
+            _xmarkHereManager = new MarkHereManager();
+        }
+        return _xmarkHereManager;
+    }
+
+    protected boolean xhasMarkHereManager() {
+        return _xmarkHereManager != null;
+    }
+
+    protected void xdestroyMarkHereManager() {
+        _xmarkHereManager = null;
     }
 
     // ===================================================================================
@@ -681,6 +693,102 @@ public abstract class PlainTestCase extends TestCase {
     }
 
     // ===================================================================================
+    //                                                                         Transaction
+    //                                                                         ===========
+    // reserved interfaces
+    /**
+     * Begin new transaction (even if the transaction has already been begun). <br />
+     * You can manually commit or roll-back at your favorite timing by returned transaction resource. <br />
+     * On the other hand, you might have mistake of transaction handling. <br />
+     * So, also you can use {@link #performNewTransaction(TransactionPerformer)}. (easier)
+     * @return The resource of transaction, you can commit or roll-back it. (basically NotNull: if null, transaction unsupported)
+     */
+    protected TransactionResource beginNewTransaction() {
+        // should be overridden by DI container's test case
+        return null;
+    }
+
+    /**
+     * Commit the specified transaction.
+     * @param resource The resource of transaction provided by beginNewTransaction(). (NotNull)
+     */
+    protected void commitTransaction(TransactionResource resource) {
+    }
+
+    /**
+     * Roll-back the specified transaction.
+     * @param resource The resource of transaction provided by beginNewTransaction(). (NotNull)
+     */
+    protected void rollbackTransaction(TransactionResource resource) {
+    }
+
+    /**
+     * Perform the process in new transaction (even if the transaction has already been begun). <br />
+     * You can select commit or roll-back by returned value of the callback method. 
+     * <pre>
+     * performNewTransaction(new TransactionPerformer() {
+     *     public boolean perform() { <span style="color: #3F7E5E">// transaction scope</span>
+     *         ...
+     *         return false; <span style="color: #3F7E5E">// true: commit, false: roll-back</span>
+     *     }
+     * });
+     * </pre>
+     * @param performer The callback for the transaction process. (NotNull)
+     * @throws TransactionPerformFailureException When the performance fails.
+     */
+    protected void performNewTransaction(TransactionPerformer performer) {
+        assertNotNull(performer);
+        final TransactionResource resource = beginNewTransaction();
+        Exception cause = null;
+        boolean commit = false;
+        try {
+            commit = performer.perform();
+        } catch (RuntimeException e) {
+            cause = e;
+        } catch (SQLException e) {
+            cause = e;
+        } finally {
+            if (commit && cause == null) {
+                try {
+                    commitTransaction(resource);
+                } catch (RuntimeException e) {
+                    cause = e;
+                }
+            } else {
+                try {
+                    rollbackTransaction(resource);
+                } catch (RuntimeException e) {
+                    if (cause != null) {
+                        log(e.getMessage());
+                    } else {
+                        cause = e;
+                    }
+                }
+            }
+        }
+        if (cause != null) {
+            String msg = "Failed to perform the process in transaction: " + performer;
+            throw new TransactionPerformFailureException(msg, cause);
+        }
+    }
+
+    protected void xassertTransactionResourceNotNull(TransactionResource resource) {
+        if (resource == null) {
+            String msg = "The argument 'resource' should not be null.";
+            throw new IllegalArgumentException(msg);
+        }
+    }
+
+    /**
+     * Get the data source for database.
+     * @return The instance from DI container. (basically NotNull: if null, data source unsupported)
+     */
+    protected DataSource getDataSource() {
+        // should be overridden by DI container's test case
+        return null;
+    }
+
+    // ===================================================================================
     //                                                                         Cannon-ball
     //                                                                         ===========
     /**
@@ -696,7 +804,25 @@ public abstract class PlainTestCase extends TestCase {
      * @param option The option for the run. (NotNull)
      */
     protected void cannonball(CannonballRun run, CannonballOption option) {
-        final CannonballDirector director = new CannonballDirector(new CannonballStaff() {
+        assertNotNull(run);
+        assertNotNull(option);
+        createCannonballDirector().readyGo(run, option);
+    }
+
+    /**
+     * Create the instance of cannon-ball director.
+     * @return The new-created instance of the director. (NotNull)
+     */
+    protected CannonballDirector createCannonballDirector() { // customize point
+        return new CannonballDirector(xcreateCannonballStaff());
+    }
+
+    /**
+     * Create the instance of cannon-ball staff.
+     * @return The new-created instance of the staff. (NotNull)
+     */
+    protected CannonballStaff xcreateCannonballStaff() {
+        return new CannonballStaff() {
             public TransactionResource help_beginTransaction() {
                 return beginNewTransaction();
             }
@@ -724,8 +850,147 @@ public abstract class PlainTestCase extends TestCase {
             public String help_ln() {
                 return ln();
             }
-        });
-        director.readyGo(run, option);
+        };
+    }
+
+    // ===================================================================================
+    //                                                                        Police Story
+    //                                                                        ============
+    /**
+     * Tell me about your police story of Java class chase. (default: '.java' files under src/main/java)
+     * <pre>
+     * policeStoryOfJavaClassChase(new PoliceStoryJavaClassHandler() {
+     *     public void handle(File srcFile, Class<?> clazz) {
+     *         <span style="color: #3F7E5E">// handle the class as you like it</span>
+     *         <span style="color: #3F7E5E">// e.g. clazz.getMethods(), readLine(srcFile, ...)</span>
+     *     }
+     * });
+     * </pre>
+     * @param handler The handler of Java class. (NotNull)
+     */
+    public void policeStoryOfJavaClassChase(PoliceStoryJavaClassHandler handler) {
+        assertNotNull(handler);
+        createPoliceStory().chaseJavaClass(handler);
+    }
+
+    /**
+     * Tell me about your police story of JSP file chase. (default: '.jsp' files under src/main/webapp)
+     * <pre>
+     * policeStoryOfJspFileChase(new PoliceStoryJspFileHandler() {
+     *     public void handle(File jspFile) {
+     *         <span style="color: #3F7E5E">// handle the class as you like it</span>
+     *         <span style="color: #3F7E5E">// e.g. readLine(jspFile, ...)</span>
+     *     }
+     * });
+     * </pre>
+     * @param handler The handler of JSP file. (NotNull)
+     */
+    public void policeStoryOfJspFileChase(PoliceStoryJspFileHandler handler) {
+        assertNotNull(handler);
+        createPoliceStory().chaseJspFile(handler);
+    }
+
+    /**
+     * Tell me about your police story of miscellaneous resource chase.
+     * <pre>
+     * policeStoryOfMiscFileChase(new PoliceStoryMiscFileHandler() {
+     *     public void handle(File miscFile) {
+     *         <span style="color: #3F7E5E">// handle the class as you like it</span>
+     *         <span style="color: #3F7E5E">// e.g. readLine(miscFile, ...)</span>
+     *     }
+     * }, miscDir); <span style="color: #3F7E5E">// you can specify base directory of file</span>
+     * </pre>
+     * @param handler The handler of miscellaneous resource. (NotNull)
+     * @param baseDir The base directory for the miscellaneous file. (NotNull)
+     */
+    public void policeStoryOfMiscFileChase(PoliceStoryMiscFileHandler handler, File baseDir) {
+        assertNotNull(handler);
+        assertNotNull(baseDir);
+        createPoliceStory().chaseMiscFile(handler, baseDir);
+    }
+
+    /**
+     * Tell me about your police story of project resource chase. (default: under target/test-classes/../../)
+     * <pre>
+     * policeStoryOfProjectResourceChase(new PoliceStoryProjectResourceHandler() {
+     *     public void handle(File resourceFile) {
+     *         <span style="color: #3F7E5E">// handle the class as you like it</span>
+     *         <span style="color: #3F7E5E">// e.g. readLine(resourceFile, ...)</span>
+     *     }
+     * });
+     * </pre>
+     * @param handler The handler of project resource. (NotNull)
+     */
+    public void policeStoryOfProjectResourceChase(PoliceStoryProjectResourceHandler handler) {
+        assertNotNull(handler);
+        createPoliceStory().chaseProjectResource(handler);
+    }
+
+    /**
+     * Tell me about your police story of web resource chase. (default: under src/main/webapp)
+     * <pre>
+     * policeStoryOfWebResourceChase(new PoliceStoryWebResourceHandler() {
+     *     public void handle(File resourceFile) {
+     *         <span style="color: #3F7E5E">// handle the class as you like it</span>
+     *         <span style="color: #3F7E5E">// e.g. readLine(resourceFile, ...)</span>
+     *     }
+     * });
+     * </pre>
+     * @param handler The handler of web resource. (NotNull)
+     */
+    public void policeStoryOfWebResourceChase(PoliceStoryWebResourceHandler handler) {
+        assertNotNull(handler);
+        createPoliceStory().chaseWebResource(handler);
+    }
+
+    /**
+     * Create the instance of police story for many story.
+     * @return The new-created instance of the police story. (NotNull)
+     */
+    protected PoliceStory createPoliceStory() { // customize point
+        return new PoliceStory(this, getProjectDir());
+    }
+
+    // ===================================================================================
+    //                                                                          Filesystem
+    //                                                                          ==========
+    /**
+     * Read the line of the text file.
+     * @param textFile The file object of text. (NotNull)
+     * @param encoding The encoding of the file. (NotNull)
+     * @param handler The handler of line string for the text file. (NotNull)
+     * @throws IllegalStateException When it fails to read the text file.
+     */
+    protected void readLine(File textFile, String encoding, FileLineHandler handler) {
+        assertNotNull(textFile);
+        assertNotNull(encoding);
+        assertNotNull(handler);
+        final FilesystemPlayer reader = createFilesystemPlayer();
+        reader.readLine(textFile, encoding, handler);
+    }
+
+    /**
+     * Create the filesystem player for e.g. reading line.
+     * @return The new-created instance of the player. (NotNull)
+     */
+    protected FilesystemPlayer createFilesystemPlayer() { // customize point
+        return new FilesystemPlayer();
+    }
+
+    /**
+     * Get the directory object of the (application or Eclipse) project. (default: target/test-classes/../../)
+     * @return The file object of the directory. (NotNull)
+     */
+    protected File getProjectDir() { // customize point
+        return getTestCaseBuildDir().getParentFile().getParentFile(); // target/test-classes/../../
+    }
+
+    /**
+     * Get the directory object of the build for the test case. (default: target/test-classes)
+     * @return The file object of the directory. (NotNull)
+     */
+    protected File getTestCaseBuildDir() {
+        return DfResourceUtil.getBuildDir(getClass()); // target/test-classes
     }
 
     // ===================================================================================
@@ -778,6 +1043,10 @@ public abstract class PlainTestCase extends TestCase {
         fireMan.threadFire(execution, option);
     }
 
+    /**
+     * Sleep the current thread.
+     * @param millis The millisecond to sleep.
+     */
     protected void sleep(int millis) {
         try {
             Thread.sleep(millis);
@@ -788,103 +1057,12 @@ public abstract class PlainTestCase extends TestCase {
     }
 
     // ===================================================================================
-    //                                                                         Transaction
-    //                                                                         ===========
-    // reserved interfaces
-    /**
-     * Begin new transaction (even if the transaction has already been begun). <br />
-     * You can manually commit or roll-back at your favorite timing by returned transaction resource. <br />
-     * On the other hand, you might have mistake of transaction handling. <br />
-     * So, also you can use {@link #performNewTransaction(TransactionPerformer)}. (easier)
-     * @return The resource of transaction, you can commit or roll-back it. (basically NotNull: if null, transaction unsupported)
-     */
-    protected TransactionResource beginNewTransaction() {
-        // should be overridden by DI container's test case
-        return null;
-    }
-
-    /**
-     * Commit the specified transaction.
-     * @param resource The resource of transaction provided by beginNewTransaction(). (NotNull)
-     */
-    protected void commitTransaction(TransactionResource resource) {
-    }
-
-    /**
-     * Roll-back the specified transaction.
-     * @param resource The resource of transaction provided by beginNewTransaction(). (NotNull)
-     */
-    protected void rollbackTransaction(TransactionResource resource) {
-    }
-
-    /**
-     * Perform the process in new transaction (even if the transaction has already been begun). <br />
-     * You can select commit or roll-back by returned value of the callback method. 
-     * <pre>
-     * performNewTransaction(new TransactionPerformer() {
-     *     public boolean perform() { <span style="color: #3F7E5E">// transaction scope</span>
-     *         ...
-     *         return false; <span style="color: #3F7E5E">// true: commit, false: roll-back</span>
-     *     }
-     * });
-     * </pre>
-     * @param performer The callback for the transaction process. (NotNull)
-     * @throws TransactionPerformFailureException When the performance fails.
-     */
-    protected void performNewTransaction(TransactionPerformer performer) {
-        final TransactionResource resource = beginNewTransaction();
-        Exception cause = null;
-        boolean commit = false;
-        try {
-            commit = performer.perform();
-        } catch (RuntimeException e) {
-            cause = e;
-        } catch (SQLException e) {
-            cause = e;
-        } finally {
-            if (commit && cause == null) {
-                try {
-                    commitTransaction(resource);
-                } catch (RuntimeException e) {
-                    cause = e;
-                }
-            } else {
-                try {
-                    rollbackTransaction(resource);
-                } catch (RuntimeException e) {
-                    if (cause != null) {
-                        log(e.getMessage());
-                    } else {
-                        cause = e;
-                    }
-                }
-            }
-        }
-        if (cause != null) {
-            String msg = "Failed to perform the process in transaction: " + performer;
-            throw new TransactionPerformFailureException(msg, cause);
-        }
-    }
-
-    protected void xassertTransactionResourceNotNull(TransactionResource resource) {
-        if (resource == null) {
-            String msg = "The argument 'resource' should not be null.";
-            throw new IllegalArgumentException(msg);
-        }
-    }
-
-    /**
-     * Get the data source for database.
-     * @return The instance from DI container. (basically NotNull: if null, data source unsupported)
-     */
-    protected DataSource getDataSource() {
-        // should be overridden by DI container's test case
-        return null;
-    }
-
-    // ===================================================================================
     //                                                                       System Helper
     //                                                                       =============
+    /**
+     * Get the line separator. (LF fixedly)
+     * @return The string of the line separator. (NotNull)
+     */
     protected String ln() {
         return "\n";
     }

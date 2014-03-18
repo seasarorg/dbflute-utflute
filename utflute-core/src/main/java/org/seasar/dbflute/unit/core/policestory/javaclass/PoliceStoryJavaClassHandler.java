@@ -13,20 +13,19 @@
  * either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.seasar.dbflute.unit.core.binding;
+package org.seasar.dbflute.unit.core.policestory.javaclass;
 
-import java.lang.annotation.Annotation;
+import java.io.File;
 
 /**
  * @author jflute
  * @since 0.4.0 (2014/03/16 Sunday)
  */
-public interface NonBindingDeterminer {
+public interface PoliceStoryJavaClassHandler {
 
     /**
-     * Should be the annotation treated as non-binding?
-     * @param bindingAnno The annotation instance for binding to determine. (NotNull)
-     * @return The determination, true or false.
+     * @param srcFile The file object for the source of the class. (NotNull)
+     * @param clazz The type of the Java class. (NotNull)
      */
-    boolean isNonBinding(Annotation bindingAnno);
+    void handle(File srcFile, Class<?> clazz);
 }

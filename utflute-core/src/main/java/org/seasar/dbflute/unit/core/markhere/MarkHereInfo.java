@@ -19,6 +19,7 @@ import org.seasar.dbflute.util.DfTypeUtil;
 
 /**
  * @author jflute
+ * @since 0.4.0 (2014/03/16 Sunday)
  */
 public class MarkHereInfo {
 

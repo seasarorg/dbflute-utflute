@@ -1,0 +1,122 @@
+/*
+ * Copyright 2004-2014 the Seasar Foundation and the Others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+package org.seasar.dbflute.unit.seasar.dicheck;
+
+import java.io.File;
+import java.lang.reflect.Field;
+
+import javax.annotation.Resource;
+
+import junit.framework.AssertionFailedError;
+
+import org.seasar.dbflute.exception.factory.ExceptionMessageBuilder;
+import org.seasar.dbflute.unit.core.policestory.javaclass.PoliceStoryJavaClassHandler;
+import org.seasar.dbflute.util.Srl;
+import org.seasar.framework.container.annotation.tiger.Binding;
+import org.seasar.framework.container.annotation.tiger.BindingType;
+
+/**
+ * @author jflute
+ * @since 0.4.0 (2014/03/16 Sunday)
+ */
+public class SmartDeployDependencyChecker implements PoliceStoryJavaClassHandler {
+
+    protected final String _title;
+    protected final String _suffix;
+
+    public SmartDeployDependencyChecker(String title, String suffix) {
+        this._title = title;
+        this._suffix = suffix;
+    }
+
+    public void handle(File srcFile, Class<?> clazz) { // field injection only for now
+        final Field[] declaredFields = extractDeclaredFields(clazz);
+        for (Field field : declaredFields) {
+            if (!hasInjectionAnnotation(clazz, field)) {
+                continue;
+            }
+            // DI component here
+            final Class<?> injectedType = field.getType();
+            final String injectedClassName = extractInjectedClassName(injectedType);
+            if (!injectedClassName.endsWith(_suffix)) {
+                continue;
+            }
+            // target class here
+            processTargetClass(clazz, field, injectedType);
+            if (injectedType.isInterface()) { // target but interface
+                continue; // by-type is valid so OK
+            }
+            if (checkInjectionField(clazz, field, injectedType)) {
+                continue;
+            }
+            throwInjectionFieldNameDifferentException(clazz, field, injectedType);
+        }
+    }
+
+    protected Field[] extractDeclaredFields(Class<?> clazz) { // customize point
+        return clazz.getDeclaredFields(); // contains private
+    }
+
+    protected boolean hasInjectionAnnotation(Class<?> clazz, Field field) {
+        if (field.getAnnotation(Resource.class) != null) {
+            return true;
+        }
+        final Binding binding = field.getAnnotation(Binding.class);
+        return binding != null && !BindingType.NONE.equals(binding.bindingType());
+    }
+
+    protected void processTargetClass(Class<?> clazz, Field field, Class<?> injectedType) {
+        // you can override as you like it
+    }
+
+    protected boolean checkInjectionField(Class<?> clazz, Field field, Class<?> injectedType) { // customize point
+        final String expectedFieldName = extractExpectedFieldName(injectedType);
+        return expectedFieldName.equals(field.getName());
+    }
+
+    protected void throwInjectionFieldNameDifferentException(Class<?> clazz, Field field, Class<?> injectedType) {
+        final String expectedFieldName = extractExpectedFieldName(injectedType);
+        final ExceptionMessageBuilder br = new ExceptionMessageBuilder();
+        final String uncapTitle = Srl.initUncap(_title);
+        br.addNotice("The injected " + uncapTitle + " different from field name was found.");
+        br.addItem("Advice");
+        br.addElement("The property name (field name) should be same as");
+        br.addElement(uncapTitle + " class name (initial character is uncapitalised) like this:");
+        br.addElement("  (x):");
+        br.addElement("    @Resource");
+        br.addElement("    protected Foo" + _suffix + " fooFlute;");
+        br.addElement("  (o):");
+        br.addElement("    @Resource");
+        br.addElement("    protected Foo" + _suffix + " foo" + _suffix + ";");
+        br.addItem("Base Class");
+        br.addElement(clazz.getName());
+        br.addItem("Injection Field");
+        br.addElement(field.getName());
+        br.addElement("(expected: " + expectedFieldName + ")");
+        br.addItem(_title + " Class");
+        br.addElement(injectedType.getName());
+        final String msg = br.buildExceptionMessage();
+        throw new AssertionFailedError(msg);
+    }
+
+    protected String extractInjectedClassName(Class<?> injectedType) {
+        return injectedType.getSimpleName();
+    }
+
+    protected String extractExpectedFieldName(Class<?> injectedType) {
+        return Srl.initUncap(extractInjectedClassName(injectedType));
+    }
+}

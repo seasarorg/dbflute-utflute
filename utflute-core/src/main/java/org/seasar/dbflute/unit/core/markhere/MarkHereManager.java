@@ -15,6 +15,7 @@
  */
 package org.seasar.dbflute.unit.core.markhere;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -24,13 +25,39 @@ import org.seasar.dbflute.exception.factory.ExceptionMessageBuilder;
 
 /**
  * @author jflute
+ * @since 0.4.0 (2014/03/16 Sunday)
  */
 public class MarkHereManager {
 
-    public void assertMarked(Map<String, MarkHereInfo> markMap, String mark) {
+    /** The map of mark to assert that it goes through the road. (NullAllowed: when no mark, so lazy-loaded) */
+    protected Map<String, MarkHereInfo> _xmarkMap;
+
+    /**
+     * Mark here to assert that it goes through the road.
+     * @param mark The your original mark expression as string. (NotNull)
+     */
+    public void mark(String mark) {
+        if (_xmarkMap == null) {
+            _xmarkMap = new LinkedHashMap<String, MarkHereInfo>();
+        }
+        MarkHereInfo info = _xmarkMap.get(mark);
+        if (info == null) {
+            info = new MarkHereInfo();
+            _xmarkMap.put(mark, info);
+            info.setMark(mark);
+        }
+        info.incrementCount();
+        _xmarkMap.put(mark, info);
+    }
+
+    /**
+     * Assert the mark is marked. (found in existing marks)
+     * @param mark The your original mark expression as string. (NotNull)
+     */
+    public void assertMarked(String mark) {
         boolean existsMark = false;
-        if (markMap != null) {
-            final MarkHereInfo info = markMap.get(mark);
+        if (_xmarkMap != null) {
+            final MarkHereInfo info = _xmarkMap.get(mark);
             if (info != null) {
                 existsMark = true;
                 info.finishAssertion();
@@ -42,8 +69,8 @@ public class MarkHereManager {
             br.addItem("NotFound Mark");
             br.addElement(mark);
             br.addItem("Mark Map");
-            if (markMap != null && !markMap.isEmpty()) {
-                for (Entry<String, MarkHereInfo> entry : markMap.entrySet()) {
+            if (_xmarkMap != null && !_xmarkMap.isEmpty()) {
+                for (Entry<String, MarkHereInfo> entry : _xmarkMap.entrySet()) {
                     br.addElement(entry.getValue());
                 }
             } else {
@@ -54,12 +81,21 @@ public class MarkHereManager {
         }
     }
 
-    public void checkNonAssertedMark(Map<String, MarkHereInfo> markMap) {
-        if (markMap == null) {
+    /**
+     * Is the mark marked? (found the mark in existing marks?)
+     * @param mark The your original mark expression as string. (NotNull)
+     * @return The determination, true or false.
+     */
+    public boolean isMarked(String mark) {
+        return _xmarkMap != null && _xmarkMap.get(mark) != null;
+    }
+
+    public void checkNonAssertedMark() {
+        if (_xmarkMap == null) {
             return;
         }
         MarkHereInfo nonAssertedInfo = null;
-        for (Entry<String, MarkHereInfo> entry : markMap.entrySet()) {
+        for (Entry<String, MarkHereInfo> entry : _xmarkMap.entrySet()) {
             final MarkHereInfo info = entry.getValue();
             if (!info.isAsserted()) {
                 nonAssertedInfo = info;
@@ -85,11 +121,18 @@ public class MarkHereManager {
             br.addItem("Non-Asserted Mark");
             br.addElement(nonAssertedInfo);
             br.addItem("Mark Map");
-            for (Entry<String, MarkHereInfo> entry : markMap.entrySet()) {
+            for (Entry<String, MarkHereInfo> entry : _xmarkMap.entrySet()) {
                 br.addElement(entry.getValue());
             }
             final String msg = br.buildExceptionMessage();
             throw new AssertionFailedError(msg);
+        }
+    }
+
+    public void clearMarkMap() {
+        if (_xmarkMap != null) {
+            _xmarkMap.clear();
+            _xmarkMap = null;
         }
     }
 }

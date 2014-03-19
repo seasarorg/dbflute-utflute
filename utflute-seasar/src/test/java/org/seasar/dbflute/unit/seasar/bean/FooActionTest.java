@@ -20,6 +20,7 @@ import org.seasar.dbflute.unit.seasar.dbflute.exbhv.FooBhv;
 
 /**
  * @author jflute
+ * @since 0.1.0 (2011/07/24 Sunday)
  */
 public class FooActionTest extends ContainerTestCase {
 

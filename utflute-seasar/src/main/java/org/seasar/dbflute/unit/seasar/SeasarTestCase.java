@@ -211,33 +211,40 @@ public abstract class SeasarTestCase extends InjectionTestCase {
 
     @Override
     protected String xfilterByBindingNamingRule(String propertyName, Class<?> propertyType) {
+        if (propertyType.getSimpleName().contains("_")) { // e.g. (org.dbflute.maihama.) Foo_BarLogic
+            return null; // simple name that contains '_' is unsupported
+        }
         // e.g. [root].logic.foo.bar.QuxLogic
-        final String packageExp = Srl.substringLastFront(propertyType.getName(), ".");
         final NamingConvention convention = getComponent(NamingConvention.class);
+        final String componentName;
         try {
-            final String componentName = convention.fromClassNameToComponentName(propertyType.getName());
-            if (componentName.endsWith(propertyName)) { // e.g. foo_bar_quxLogic ends with quxLogic
-                return componentName;
-            }
-            // e.g. foo_bar_quxLogic ends with quxService but the class exists in container
-        } catch (RuntimeException ignored) { // unfortunately no exception that means not found explicitly
-            // the class does not exist in container
+            // e.g. foo_bar_quxLogic -> foo_bar_quxLogic ends with [property name] -> returns foo_bar_quxLogic
+            componentName = convention.fromClassNameToComponentName(propertyType.getName());
+        } catch (RuntimeException ignored) { // just in case e.g. org.dbflute.maihama.foo
+            return null;
         }
-        // deriving component name (might be already unnecessary...but just in case)
-        final String[] packageNames = convention.getRootPackageNames();
-        for (String rootPackage : packageNames) {
-            if (packageExp.startsWith(rootPackage)) {
-                continue;
-            }
-            // e.g. [root].logic.foo.bar -> logic.foo.bar -> foo.bar -> foo_bar -> foo_bar_QuxLogic
-            if (packageExp.startsWith(rootPackage + ".")) {
-                final String rearPackage = Srl.trim(Srl.substringFirstRear(packageExp, rootPackage), ".");
-                final String nextRearPackage = Srl.substringFirstRear(rearPackage, "."); // remove e.g. logic
-                final String packagePrefix = Srl.replace(nextRearPackage, ".", "_"); // foo.bar -> foo_bar
-                return packagePrefix + "_" + propertyName; // e.g. foo_bar_QuxLogic
-            }
+        if (xcanUseComponentNameByBindingNamingRule(componentName, propertyName)) {
+            return componentName;
         }
+        // not smart deploy component or name wrong e.g. (foo_bar_) quxLogic does not equal quxService
         return null;
+    }
+
+    protected boolean xcanUseComponentNameByBindingNamingRule(String componentName, String propertyName) {
+        if (componentName.contains("_")) { // means smart deploy component
+            if (componentName.endsWith(propertyName)) {
+                final String front = Srl.substringLastFront(componentName, propertyName); // e.g. foo_bar_
+                if (front.equals("") || front.endsWith("_")) {
+                    // e.g.
+                    //  foo_bar_quxLogic ends with foo_bar_quxLogic
+                    //  foo_bar_quxLogic ends with quxLogic
+                    //  foo_bar_quxLogic ends with bar_quxLogic
+                    return true;
+                }
+                // e.g. foo_bar_quxLogic ends with ar_quxLogic
+            }
+        }
+        return false;
     }
 
     // ===================================================================================

@@ -48,14 +48,16 @@ public class FooActionTest extends ContainerTestCase {
         assertNotNull(action.barController.facadeInstance());
         assertNull(action.fooHelper);
         assertNotNull(action.fooLogic);
-        assertNull(action.fooLogic.behaviorToString());
-        assertNull(action.fooLogic.fooHelper);
+        assertNotNull(action.fooLogic.behaviorToString());
+        assertNotNull(action.fooLogic.fooHelper);
+        assertNotNull(action.fooLogic.fooHelper.transactionManager);
         assertNotNull(action.fooLogic.fooService);
-        assertNull(action.fooLogic.getTransactionManager());
+        assertNotNull(action.fooLogic.fooService.transactionManager);
+        assertNotNull(action.fooLogic.getTransactionManager());
         // no web here
         //assertNull(action.fooLogic.request);
         assertNotNull(action.serviceToString());
-        assertNull(action.serviceInstance().transactionManager);
+        assertNotNull(action.serviceInstance().transactionManager);
         assertNotNull(action.transactionManager);
         // no web here
         //assertNotNull(action.request);

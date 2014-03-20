@@ -18,6 +18,7 @@ public class FooLogic {
     @Resource(name = "fooService")
     protected FooService fooHelper; // name wrong but component name is specified
 
+    @Autowired
     protected FooService fooService; // at first but specify none but unsupported so injected
 
     // no web here
@@ -26,15 +27,6 @@ public class FooLogic {
 
     public String behaviorToString() {
         return fooBhv != null ? fooBhv.toString() : null;
-    }
-
-    public FooService getFooService() {
-        return fooService;
-    }
-
-    @Autowired
-    public void setFooService(FooService fooService) {
-        this.fooService = fooService;
     }
 
     public PlatformTransactionManager getTransactionManager() {

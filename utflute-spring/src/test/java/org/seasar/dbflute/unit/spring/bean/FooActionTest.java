@@ -131,4 +131,18 @@ public class FooActionTest extends ContainerTestCase {
         assertSame(bhv, action.fooBhv);
         assertSame(logic, action.fooLogic);
     }
+
+    public void test_inject_superClass_injected() throws Exception {
+        // ## Arrange ##
+        FooFacade facade = new FooFacade();
+
+        // ## Act ##
+        inject(facade);
+
+        // ## Assert ##
+        assertNotNull(facade.myBehaviorInstance());
+        assertNotNull(facade.superBehaviorInstance());
+        assertNull(facade.transactionManager);
+        assertNull(facade.fooService); // different
+    }
 }

@@ -3,25 +3,31 @@ package org.seasar.dbflute.unit.seasar.bean;
 import javax.annotation.Resource;
 import javax.transaction.TransactionManager;
 
-import org.seasar.framework.container.annotation.tiger.Binding;
+import org.seasar.dbflute.unit.seasar.dbflute.exbhv.FooBhv;
 
 /**
  * @author jflute
  * @since 0.4.0 (2014/03/16 Sunday)
  */
-public class FooFacade {
+public class FooFacade extends FooBaseFacade {
 
     @Resource
-    protected TransactionManager transactionManager;
+    private FooBhv fooBhv; // same name as super's
 
-    protected FooService fooService;
+    protected TransactionManager transactionManager; // no annotation, no setter
+
+    protected FooService fooService; // annotation for protected setter
+
+    public FooBhv myBehaviorInstance() {
+        return fooBhv;
+    }
 
     public FooService getFooService() {
         return fooService;
     }
 
-    @Binding
-    public void setFooService(FooService fooService) {
+    @Resource
+    protected void setFooService(FooService fooService) {
         this.fooService = fooService;
     }
 }

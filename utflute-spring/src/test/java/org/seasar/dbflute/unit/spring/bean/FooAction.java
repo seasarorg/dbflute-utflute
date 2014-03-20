@@ -38,17 +38,24 @@ public class FooAction {
     @Resource
     protected FooFacade fooHelper; // name wrong: Resource is name-only so not injected
 
+    @Resource
+    private FooFacade fooFacade; // private field
+
     @Autowired
     protected FooLogic fooLogic; // container annotation
 
     @Autowired
-    private FooService fooService; // specify none is unsupported so injected (so private test)
+    protected FooService fooService; // specify none is unsupported so injected (so private test)
 
     protected PlatformTransactionManager transactionManager; // setter only no annotation
 
     // no web here
     //@Resource
     //protected HttpServletRequest request; // mocklet
+
+    public FooFacade facadeInstance() {
+        return fooFacade;
+    }
 
     public String serviceToString() {
         return fooService != null ? fooService.toString() : null;

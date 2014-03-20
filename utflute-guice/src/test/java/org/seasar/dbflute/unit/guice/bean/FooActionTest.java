@@ -48,6 +48,10 @@ public class FooActionTest extends MockUnitTestCase {
         assertNotNull(action.barController);
         assertNotNull(action.barController.facadeInstance());
         assertNotNull(action.fooHelper);
+        assertNotNull(action.facadeInstance());
+        assertNotNull(action.facadeInstance().myBehaviorInstance());
+        assertNotNull(action.facadeInstance().superBehaviorInstance());
+        assertNotNull(action.facadeInstance().fooService);
         assertNotNull(action.fooLogic);
         assertNotNull(action.fooLogic.behaviorToString());
         assertNotNull(action.fooLogic.fooHelper);

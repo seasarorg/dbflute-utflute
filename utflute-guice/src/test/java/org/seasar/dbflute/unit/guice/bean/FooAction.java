@@ -37,6 +37,9 @@ public class FooAction {
     protected FooFacade fooHelper; // name wrong: but by-type so injected
 
     @com.google.inject.Inject
+    private FooFacade fooFacade; // private field
+
+    @com.google.inject.Inject
     protected FooLogic fooLogic; // container annotation
 
     @com.google.inject.Inject
@@ -47,6 +50,10 @@ public class FooAction {
     // no web here
     //@Resource
     //protected HttpServletRequest request; // mocklet
+
+    public FooFacade facadeInstance() {
+        return fooFacade;
+    }
 
     public String serviceToString() {
         return fooService != null ? fooService.toString() : null;

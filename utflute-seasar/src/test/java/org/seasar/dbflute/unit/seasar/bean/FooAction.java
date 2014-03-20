@@ -40,6 +40,9 @@ public class FooAction {
     @Resource
     protected FooFacade fooHelper; // name wrong: concrete so not injected
 
+    @Resource
+    private FooFacade fooFacade; // private field
+
     @Binding
     protected FooLogic fooLogic; // container annotation
 
@@ -50,6 +53,10 @@ public class FooAction {
 
     @Resource
     protected HttpServletRequest request; // mocklet
+
+    public FooFacade facadeInstance() {
+        return fooFacade;
+    }
 
     public void setTransactionManager(TransactionManager transactionManager) {
         this.transactionManager = transactionManager;

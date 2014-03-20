@@ -45,6 +45,10 @@ public class FooActionTest extends ContainerTestCase {
         assertNull(action.fooController);
         assertNotNull(action.barController);
         assertNull(action.fooHelper);
+        assertNotNull(action.facadeInstance());
+        assertNotNull(action.facadeInstance().myBehaviorInstance());
+        assertNull(action.facadeInstance().superBehaviorInstance());
+        assertNull(action.facadeInstance().fooService);
         assertNotNull(action.fooLogic);
         assertNotNull(action.fooLogic.behaviorToString());
         assertNotNull(action.fooLogic.fooHelper);

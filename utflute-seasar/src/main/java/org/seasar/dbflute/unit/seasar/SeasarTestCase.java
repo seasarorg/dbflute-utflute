@@ -19,8 +19,10 @@ import java.lang.annotation.Annotation;
 import java.util.Map;
 
 import javax.annotation.Resource;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.transaction.NotSupportedException;
 import javax.transaction.Status;
@@ -38,6 +40,7 @@ import org.seasar.dbflute.unit.mocklet.MockletHttpServletRequest;
 import org.seasar.dbflute.unit.mocklet.MockletHttpServletRequestImpl;
 import org.seasar.dbflute.unit.mocklet.MockletHttpServletResponse;
 import org.seasar.dbflute.unit.mocklet.MockletHttpServletResponseImpl;
+import org.seasar.dbflute.unit.mocklet.MockletHttpSession;
 import org.seasar.dbflute.unit.mocklet.MockletServletConfig;
 import org.seasar.dbflute.unit.mocklet.MockletServletConfigImpl;
 import org.seasar.dbflute.unit.mocklet.MockletServletContext;
@@ -65,10 +68,25 @@ public abstract class SeasarTestCase extends InjectionTestCase {
     //                                                                           Attribute
     //                                                                           =========
     // -----------------------------------------------------
-    //                                      Container Object
-    //                                      ----------------
-    /** The cached configuration file for DI container. (NullAllowed: null means beginning or test execution) */
-    protected static String _xpreparedConfigFile;
+    //                                         Static Cached
+    //                                         -------------
+    /** The cached configuration file of DI container. (NullAllowed: null means beginning or ending) */
+    protected static String _xcachedConfigFile;
+
+    /** The cached determination of suppressing web mock. (NullAllowed: null means beginning or ending) */
+    protected static Boolean _xcachedSuppressWebMock;
+
+    /** The cached configuration of servlet. (NullAllowed: when no web mock or beginning or ending) */
+    protected static MockletServletConfig _xcachedServletConfig;
+
+    // -----------------------------------------------------
+    //                                              Web Mock
+    //                                              --------
+    /** The mock request of the test case execution. (NullAllowed: when no web mock or beginning or ending) */
+    protected MockletHttpServletRequest _xmockRequest;
+
+    /** The mock response of the test case execution. (NullAllowed: when no web mock or beginning or ending) */
+    protected MockletHttpServletResponse _xmockResponse;
 
     // ===================================================================================
     //                                                                            Settings
@@ -87,19 +105,64 @@ public abstract class SeasarTestCase extends InjectionTestCase {
     //                                     -----------------
     @Override
     protected void xprepareTestCaseContainer() {
+        final String configFile = xdoPrepareTestCaseContainer();
+        xsaveCachedInstance(configFile);
+        xdoPrepareWebMockContext();
+    }
+
+    protected String xdoPrepareTestCaseContainer() {
         if (isUseOneTimeContainer()) {
             xdestroyContainer();
         }
         final String configFile = prepareConfigFile();
         if (xisInitializedContainer()) {
-            if (configFile.equals(_xpreparedConfigFile)) { // no change
-                return; // no need to initialize
+            if (xcanRecycleContainer(configFile)) {
+                log("...Recycling seasar: " + configFile);
+                xrecycleContainerInstance(configFile);
+                return configFile; // no need to initialize
             } else { // changed
                 xdestroyContainer(); // to re-initialize
             }
         }
         xinitializeContainer(configFile);
-        _xpreparedConfigFile = configFile;
+        return configFile;
+    }
+
+    protected boolean xcanRecycleContainer(String configFile) {
+        return xconfigCanAcceptContainerRecycle(configFile) && xwebMockCanAcceptContainerRecycle();
+    }
+
+    protected boolean xconfigCanAcceptContainerRecycle(String configFile) {
+        return configFile.equals(_xcachedConfigFile); // no change
+    }
+
+    protected void xrecycleContainerInstance(String configFile) {
+        // managed as singleton so caching is unneeded here
+    }
+
+    protected boolean xwebMockCanAcceptContainerRecycle() {
+        // no mark or no change
+        return _xcachedSuppressWebMock == null || _xcachedSuppressWebMock.equals(isSuppressWebMock());
+    }
+
+    protected void xsaveCachedInstance(String configFile) {
+        _xcachedConfigFile = configFile;
+        _xcachedSuppressWebMock = isSuppressWebMock();
+    }
+
+    /**
+     * Does it suppress web mock? e.g. HttpServletRequest, HttpSession
+     * @return The determination, true or false.
+     */
+    protected boolean isSuppressWebMock() {
+        return false;
+    }
+
+    protected void xdoPrepareWebMockContext() {
+        if (_xcachedServletConfig != null) {
+            // the servletConfig has been already created when container initialization
+            xregisterWebMockContext(_xcachedServletConfig);
+        }
     }
 
     /**
@@ -119,7 +182,13 @@ public abstract class SeasarTestCase extends InjectionTestCase {
 
     @Override
     protected void xclearCachedContainer() {
-        _xpreparedConfigFile = null;
+        _xcachedConfigFile = null;
+    }
+
+    @Override
+    public void tearDown() throws Exception {
+        _xmockRequest = null;
+        _xmockResponse = null;
     }
 
     // ===================================================================================
@@ -264,19 +333,12 @@ public abstract class SeasarTestCase extends InjectionTestCase {
 
     protected void xinitializeContainer(String configFile) {
         if (isSuppressWebMock()) { // library
+            log("...Initializing seasar as library: " + configFile);
             xdoInitializeContainerAsLibrary(configFile);
-        } else { // web
-            // Seasar contains web components as default
+        } else { // web (Seasar contains web components as default)
+            log("...Initializing seasar as web: " + configFile);
             xdoInitializeContainerAsWeb(configFile);
         }
-    }
-
-    /**
-     * Does it suppress web mock? e.g. HttpServletRequest, HttpSession
-     * @return The determination, true or false.
-     */
-    protected boolean isSuppressWebMock() {
-        return false;
     }
 
     protected void xdoInitializeContainerAsLibrary(String configFile) {
@@ -285,10 +347,7 @@ public abstract class SeasarTestCase extends InjectionTestCase {
     }
 
     protected void xdoInitializeContainerAsWeb(String configFile) {
-        final MockletServletConfig servletConfig = createMockletServletConfig();
-        final MockletServletContext servletContext = createMockletServletContext();
-        servletConfig.setServletContext(servletContext);
-        servletConfig.setInitParameter(S2ContainerServlet.CONFIG_PATH_KEY, configFile);
+        final ServletConfig servletConfig = xprepareMockServletConfig(configFile);
         final S2ContainerServlet containerServlet = xcreateS2ContainerServlet();
         try {
             containerServlet.init(servletConfig);
@@ -296,20 +355,30 @@ public abstract class SeasarTestCase extends InjectionTestCase {
             String msg = "Failed to initialize servlet config to servlet: " + servletConfig;
             throw new IllegalStateException(msg, e.getRootCause());
         }
-        xregisterWebMockContext(servletConfig, servletContext);
+    }
+
+    // -----------------------------------------------------
+    //                                              Web Mock
+    //                                              --------
+    protected ServletConfig xprepareMockServletConfig(String configFile) {
+        _xcachedServletConfig = createMockletServletConfig(); // cache for request mocks
+        _xcachedServletConfig.setServletContext(createMockletServletContext());
+        _xcachedServletConfig.setInitParameter(S2ContainerServlet.CONFIG_PATH_KEY, configFile);
+        return _xcachedServletConfig;
     }
 
     protected S2ContainerServlet xcreateS2ContainerServlet() {
         return new S2ContainerServlet();
     }
 
-    protected void xregisterWebMockContext(MockletServletConfig servletConfig, MockletServletContext servletContext) { // like S2ContainerFilter
+    protected void xregisterWebMockContext(MockletServletConfig servletConfig) { // like S2ContainerFilter
         final S2Container container = SingletonS2ContainerFactory.getContainer();
         final ExternalContext externalContext = container.getExternalContext();
-        final MockletHttpServletRequest request = createMockletHttpServletRequest(servletContext);
+        final MockletHttpServletRequest request = createMockletHttpServletRequest(servletConfig.getServletContext());
         final MockletHttpServletResponse response = createMockletHttpServletResponse(request);
         externalContext.setRequest(request);
         externalContext.setResponse(response);
+        xkeepMockRequestInstance(request, response); // for web mock handling methods
     }
 
     protected MockletServletConfig createMockletServletConfig() {
@@ -332,11 +401,18 @@ public abstract class SeasarTestCase extends InjectionTestCase {
         return "/utflute";
     }
 
+    protected void xkeepMockRequestInstance(MockletHttpServletRequest request, MockletHttpServletResponse response) {
+        _xmockRequest = request;
+        _xmockResponse = response;
+    }
+
     // -----------------------------------------------------
     //                                               Destroy
     //                                               -------
     protected void xdestroyContainer() {
         SingletonS2ContainerFactory.destroy();
+        SingletonS2ContainerFactory.setExternalContext(null); // destroy() does not contain this
+        _xcachedServletConfig = null;
     }
 
     // -----------------------------------------------------
@@ -380,6 +456,101 @@ public abstract class SeasarTestCase extends InjectionTestCase {
             return true;
         } catch (ComponentNotFoundRuntimeException e) {
             return false;
+        }
+    }
+
+    // ===================================================================================
+    //                                                                   Web Mock Handling
+    //                                                                   =================
+    // -----------------------------------------------------
+    //                                               Request
+    //                                               -------
+    protected MockletHttpServletRequest getMockRequest() {
+        return (MockletHttpServletRequest) _xmockRequest;
+    }
+
+    protected void addMockRequestHeader(String name, String value) {
+        final MockletHttpServletRequest request = getMockRequest();
+        if (request != null) {
+            request.addHeader(name, value);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <ATTRIBUTE> ATTRIBUTE getMockRequestParameter(String name) {
+        final MockletHttpServletRequest request = getMockRequest();
+        return request != null ? (ATTRIBUTE) request.getParameter(name) : null;
+    }
+
+    protected void addMockRequestParameter(String name, String value) {
+        final MockletHttpServletRequest request = getMockRequest();
+        if (request != null) {
+            request.addParameter(name, value);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <ATTRIBUTE> ATTRIBUTE getMockRequestAttribute(String name) {
+        final MockletHttpServletRequest request = getMockRequest();
+        return request != null ? (ATTRIBUTE) request.getAttribute(name) : null;
+    }
+
+    protected void setMockRequestAttribute(String name, Object value) {
+        final MockletHttpServletRequest request = getMockRequest();
+        if (request != null) {
+            request.setAttribute(name, value);
+        }
+    }
+
+    // -----------------------------------------------------
+    //                                              Response
+    //                                              --------
+    protected MockletHttpServletResponse getMockResponse() {
+        return (MockletHttpServletResponse) _xmockResponse;
+    }
+
+    protected Cookie[] getMockResponseCookies() {
+        final MockletHttpServletResponse response = getMockResponse();
+        return response != null ? response.getCookies() : null;
+    }
+
+    protected int getMockResponseStatus() {
+        final MockletHttpServletResponse response = getMockResponse();
+        return response != null ? response.getStatus() : null;
+    }
+
+    protected String getMockResponseString() {
+        final MockletHttpServletResponse response = getMockResponse();
+        return response != null ? response.getResponseString() : null;
+    }
+
+    // -----------------------------------------------------
+    //                                               Session
+    //                                               -------
+    /**
+     * @return The instance of mock session. (NotNull: if no session, new-created)
+     */
+    protected MockletHttpSession getMockSession() {
+        return _xmockRequest != null ? (MockletHttpSession) _xmockRequest.getSession(true) : null;
+    }
+
+    protected void invalidateMockSession() {
+        final MockletHttpSession session = getMockSession();
+        if (session != null) {
+            session.invalidate();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <ATTRIBUTE> ATTRIBUTE getMockSessionAttribute(String name) {
+        final MockletHttpSession session = getMockSession();
+        return session != null ? (ATTRIBUTE) session.getAttribute(name) : null;
+    }
+
+    protected void setMockSessionAttribute(String name, Object value) {
+        final MockletHttpSession session = getMockSession();
+        if (session != null) {
+            session.setAttribute(name, value);
         }
     }
 }

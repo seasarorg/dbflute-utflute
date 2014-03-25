@@ -13,18 +13,24 @@
  * either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.seasar.dbflute.unit.guice.web.bean;
-
-import javax.servlet.http.HttpServletRequest;
+package org.seasar.dbflute.unit.seasar.webmock;
 
 /**
  * @author jflute
- * @since 0.4.0 (2014/03/16 Sunday)
+ * @since 0.4.1 (2014/03/25 Tuesday)
  */
-public class BarLogic {
+public class WebMock9thSuppressedTest extends WebMockBaseTestCase {
 
-    // cannot inject request by official system
-    // Guice says "No implementation for javax.servlet.http.HttpServletRequest was bound."
-    //@Inject
-    protected HttpServletRequest request;
+    @Override
+    protected boolean isSuppressWebMock() {
+        return true;
+    }
+
+    public void test_noMock_basic() throws Exception {
+        doTest_noMock();
+    }
+
+    public void test_noMock_more() throws Exception {
+        doTest_noMock(); // assert state-less
+    }
 }

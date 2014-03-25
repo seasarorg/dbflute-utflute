@@ -17,18 +17,11 @@ package org.seasar.dbflute.unit.mocklet;
 
 import javax.servlet.http.HttpSession;
 
-import org.seasar.dbflute.util.DfReflectionUtil;
-
 /**
  * @author modified by jflute (originated in Seasar)
  * @since 0.4.0 (2014/03/16 Sunday)
  */
 public interface MockletHttpSession extends HttpSession, Mocklet {
-
-    String METHOD_NAME_IS_VALID = DfReflectionUtil.getPublicMethod(MockletHttpSession.class, "isValid", null).getName();
-
-    String METHOD_NAME_SET_VALID = DfReflectionUtil.getPublicMethod(MockletHttpSession.class, "setValid",
-            new Class[] { Boolean.TYPE }).getName();
 
     boolean isValid();
 

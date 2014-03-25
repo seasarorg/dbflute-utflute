@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.seasar.dbflute</groupId>
 		<artifactId>utflute-base</artifactId>
-		<version>0.4.0</version>
+		<version>0.4.1</version>
 	</parent>
 	<artifactId>utflute-guice-web</artifactId>
 	<packaging>jar</packaging>

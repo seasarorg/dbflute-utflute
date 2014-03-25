@@ -83,13 +83,22 @@ public abstract class PlainTestCase extends TestCase {
     /** The manager of mark here. (NullAllowed: lazy-loaded) */
     protected MarkHereManager _xmarkHereManager;
 
+    /** The reserved title for logging test case beginning. (NullAllowed: before preparation or already showed) */
+    protected String _xreservedTitle;
+
     // ===================================================================================
     //                                                                            Settings
     //                                                                            ========
     @Override
     protected void setUp() throws Exception {
+        xreserveShowTitle();
         xprepareAccessContext();
         super.setUp();
+    }
+
+    protected void xreserveShowTitle() {
+        // lazy-logging (no logging test case, no title)
+        _xreservedTitle = "<<< " + xgetCaseDisp() + " >>>";
     }
 
     @Override
@@ -549,6 +558,11 @@ public abstract class PlainTestCase extends TestCase {
             ++index;
         }
         final String msg = sb.toString();
+        if (_xreservedTitle != null) {
+            _xlogger.debug("");
+            _xlogger.debug(_xreservedTitle);
+            _xreservedTitle = null;
+        }
         if (cause != null) {
             _xlogger.debug(msg, cause);
         } else {
@@ -1076,5 +1090,9 @@ public abstract class PlainTestCase extends TestCase {
      */
     protected String ln() {
         return "\n";
+    }
+
+    protected String xgetCaseDisp() {
+        return getClass().getSimpleName() + "." + getName() + "()";
     }
 }

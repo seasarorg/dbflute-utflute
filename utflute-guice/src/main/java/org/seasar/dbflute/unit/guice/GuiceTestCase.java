@@ -64,15 +64,39 @@ public abstract class GuiceTestCase extends InjectionTestCase {
     //                                     -----------------
     @Override
     protected void xprepareTestCaseContainer() {
+        xdoPrepareTestCaseContainer();
+        xsaveCachedInstance();
+    }
+
+    protected void xdoPrepareTestCaseContainer() {
         if (isUseOneTimeContainer()) {
             xdestroyContainer();
         }
-        if (_xcachedInjector != null) {
-            _xcurrentActiveInjector = _xcachedInjector;
-            return;
+        if (xisInitializedContainer()) {
+            if (xcanRecycleContainer()) {
+                log("...Recycling guice");
+                xrecycleContainerInstance();
+                return;
+            } else {
+                xdestroyContainer();
+            }
         }
         final List<Module> moduleList = prepareModuleList();
         xinitializeContainer(moduleList);
+    }
+
+    protected boolean xcanRecycleContainer() {
+        // fixedly true, change unsupported for now
+        // (keep same structure as other DI containers)
+        return true;
+    }
+
+    protected void xrecycleContainerInstance() {
+        _xcurrentActiveInjector = _xcachedInjector;
+    }
+
+    protected void xsaveCachedInstance() {
+        // no cache for now
     }
 
     /**
@@ -140,6 +164,7 @@ public abstract class GuiceTestCase extends InjectionTestCase {
     }
 
     protected void xinitializeContainer(List<Module> moduleList) {
+        log("...Initializing guice: " + moduleList);
         _xcurrentActiveInjector = Guice.createInjector(moduleList.toArray(new Module[] {}));
         _xcachedInjector = _xcurrentActiveInjector;
     }

@@ -68,12 +68,19 @@ public abstract class ContainerTestCase extends SeasarTestCase {
     }
 
     protected SmartDeployDependencyChecker createSmartDeployDependencyChecker(String title, String suffix) {
-        return new SmartDeployDependencyChecker(title, suffix) {
-            @Override
-            protected void processTargetClass(Class<?> clazz, Field field, Class<?> injectedType) {
-                final String injectedClassName = extractInjectedClassName(injectedType);
-                log(clazz.getSimpleName() + "." + field.getName() + " depends on " + injectedClassName);
-            }
-        };
+        return new EmbeddedSmartDeployDependencyChecker(title, suffix);
+    }
+
+    protected class EmbeddedSmartDeployDependencyChecker extends SmartDeployDependencyChecker {
+
+        public EmbeddedSmartDeployDependencyChecker(String title, String suffix) {
+            super(title, suffix);
+        }
+
+        @Override
+        protected void processTargetClass(Class<?> clazz, Field field, Class<?> injectedType) {
+            final String injectedClassName = extractInjectedClassName(injectedType);
+            log(clazz.getSimpleName() + "." + field.getName() + " depends on " + injectedClassName);
+        }
     }
 }

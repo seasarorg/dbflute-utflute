@@ -50,10 +50,10 @@ public abstract class SpringTestCase extends InjectionTestCase {
     // -----------------------------------------------------
     //                                          Static Cache
     //                                          ------------
-    /** The cached configuration files for DI container. (NullAllowed: null means beginning or test execution) */
-    protected static String[] _xpreparedConfigFiles;
+    /** The cached configuration files of DI container. (NullAllowed: null means beginning or ending) */
+    protected static String[] _xcachedConfigFiles;
 
-    /** The cached application context for DI container. (NullAllowed: null means beginning or test execution) */
+    /** The cached application context for DI container. (NullAllowed: null means beginning or ending) */
     protected static ApplicationContext _xcachedContext;
 
     // -----------------------------------------------------
@@ -70,24 +70,42 @@ public abstract class SpringTestCase extends InjectionTestCase {
     //                                     -----------------
     @Override
     protected void xprepareTestCaseContainer() {
+        final String[] configFiles = xdoPrepareTestCaseContainer();
+        xsaveCachedInstance(configFiles);
+    }
+
+    protected String[] xdoPrepareTestCaseContainer() {
         if (isUseOneTimeContainer()) {
             xdestroyContainer();
         }
         final String[] configFiles = prepareConfigFiles();
         if (xisInitializedContainer()) { // already exists
-            if (xisEqualWithPreparedConfigurations(configFiles)) { // no change
-                _xcurrentActiveContext = _xcachedContext;
-                return; // no need to initialize
+            if (xcanRecycleContainer(configFiles)) { // no change
+                log("...Recycling spring: " + Arrays.asList(configFiles));
+                xrecycleContainerInstance(configFiles);
+                return configFiles; // no need to initialize
             } else { // changed
                 xdestroyContainer();
             }
         }
         xinitializeContainer(configFiles);
-        _xpreparedConfigFiles = configFiles;
+        return configFiles;
     }
 
-    protected boolean xisEqualWithPreparedConfigurations(String[] configFiles) {
-        return configFiles != null && Arrays.asList(configFiles).equals(Arrays.asList(_xpreparedConfigFiles));
+    protected boolean xcanRecycleContainer(String[] configFiles) {
+        return xconfigCanAcceptContainerRecycle(configFiles);
+    }
+
+    protected boolean xconfigCanAcceptContainerRecycle(String[] configFiles) {
+        return configFiles != null && Arrays.asList(configFiles).equals(Arrays.asList(_xcachedConfigFiles));
+    }
+
+    protected void xrecycleContainerInstance(String[] configFiles) {
+        _xcurrentActiveContext = _xcachedContext;
+    }
+
+    protected void xsaveCachedInstance(String[] configFiles) {
+        _xcachedConfigFiles = configFiles;
     }
 
     /**
@@ -156,6 +174,7 @@ public abstract class SpringTestCase extends InjectionTestCase {
     }
 
     protected void xinitializeContainer(String[] configFiles) {
+        log("...Initializing spring: " + Arrays.asList(configFiles));
         if (configFiles != null && configFiles.length > 0) {
             _xcurrentActiveContext = new ClassPathXmlApplicationContext(configFiles);
         } else {

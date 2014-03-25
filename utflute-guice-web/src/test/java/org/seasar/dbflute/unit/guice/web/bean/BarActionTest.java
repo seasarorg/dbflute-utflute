@@ -37,7 +37,7 @@ public class BarActionTest extends MockGuiceTestCase {
         log(action.request);
         assertNotNull(action.barBhv);
         assertNotNull(action.barLogic);
-        assertNotNull(action.barLogic.request);
+        assertNull(action.barLogic.request);
         assertNotNull(action.transactionManager);
         assertNotNull(action.request);
     }

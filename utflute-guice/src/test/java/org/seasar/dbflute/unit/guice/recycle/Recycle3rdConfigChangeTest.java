@@ -13,18 +13,27 @@
  * either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.seasar.dbflute.unit.guice.web.bean;
+package org.seasar.dbflute.unit.guice.recycle;
 
-import javax.servlet.http.HttpServletRequest;
+import org.seasar.dbflute.unit.guice.ContainerTestCase;
 
 /**
  * @author jflute
- * @since 0.4.0 (2014/03/16 Sunday)
+ * @since 0.4.1 (2014/03/25 Tuesday)
  */
-public class BarLogic {
+public class Recycle3rdConfigChangeTest extends ContainerTestCase {
 
-    // cannot inject request by official system
-    // Guice says "No implementation for javax.servlet.http.HttpServletRequest was bound."
-    //@Inject
-    protected HttpServletRequest request;
+    // configuration-change unsupported
+    //@Override
+    //protected List<Module> prepareModuleList() {
+    //    return ...;
+    //}
+
+    public void test_first() throws Exception {
+        // confirm log
+    }
+
+    public void test_second() throws Exception {
+        // confirm log
+    }
 }

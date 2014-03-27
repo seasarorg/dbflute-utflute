@@ -104,6 +104,7 @@ public abstract class WebContainerTestCase extends ContainerTestCase {
     public void tearDown() throws Exception {
         _xmockRequest = null;
         _xmockResponse = null;
+        super.tearDown();
     }
 
     // ===================================================================================

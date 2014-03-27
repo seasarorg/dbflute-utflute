@@ -189,6 +189,7 @@ public abstract class SeasarTestCase extends InjectionTestCase {
     public void tearDown() throws Exception {
         _xmockRequest = null;
         _xmockResponse = null;
+        super.tearDown();
     }
 
     // ===================================================================================

@@ -211,6 +211,7 @@ public abstract class PlainTestCase extends TestCase {
      */
     protected void assertContains(String str, String keyword) {
         if (!DfStringUtil.contains(str, keyword)) {
+            log("Asserted string: " + str); // might be large so show at log
             fail("the string should have the keyword but not found: " + keyword);
         }
     }
@@ -230,6 +231,7 @@ public abstract class PlainTestCase extends TestCase {
      */
     protected void assertContainsIgnoreCase(String str, String keyword) {
         if (!DfStringUtil.containsIgnoreCase(str, keyword)) {
+            log("Asserted string: " + str); // might be large so show at log
             fail("the string should have the keyword but not found: " + keyword);
         }
     }
@@ -248,6 +250,7 @@ public abstract class PlainTestCase extends TestCase {
      */
     protected void assertContainsAll(String str, String... keywords) {
         if (!DfStringUtil.containsAll(str, keywords)) {
+            log("Asserted string: " + str); // might be large so show at log
             fail("the string should have all keywords but not found: " + newArrayList(keywords));
         }
     }
@@ -266,6 +269,7 @@ public abstract class PlainTestCase extends TestCase {
      */
     protected void assertContainsAllIgnoreCase(String str, String... keywords) {
         if (!DfStringUtil.containsAllIgnoreCase(str, keywords)) {
+            log("Asserted string: " + str); // might be large so show at log
             fail("the string should have all keywords but not found: " + newArrayList(keywords));
         }
     }
@@ -285,6 +289,7 @@ public abstract class PlainTestCase extends TestCase {
      */
     protected void assertContainsAny(String str, String... keywords) {
         if (!DfStringUtil.containsAny(str, keywords)) {
+            log("Asserted string: " + str); // might be large so show at log
             fail("the string should have any keyword but not found: " + newArrayList(keywords));
         }
     }
@@ -304,7 +309,48 @@ public abstract class PlainTestCase extends TestCase {
      */
     protected void assertContainsAnyIgnoreCase(String str, String... keywords) {
         if (!DfStringUtil.containsAnyIgnoreCase(str, keywords)) {
+            log("Asserted string: " + str); // might be large so show at log
             fail("the string should have any keyword but not found: " + newArrayList(keywords));
+        }
+    }
+
+    /**
+     * Assert that the string does not contains the keyword.
+     * <pre>
+     * String str = "foo";
+     * assertNotContains(str, "ux"); <span style="color: #3F7E5E">// true</span>
+     * assertNotContains(str, "Foo"); <span style="color: #3F7E5E">// true</span>
+     * assertNotContains(str, "fo"); <span style="color: #3F7E5E">// false</span>
+     * assertNotContains(str, "oo"); <span style="color: #3F7E5E">// false</span>
+     * assertNotContains(str, "foo"); <span style="color: #3F7E5E">// false</span>
+     * </pre>
+     * @param str The string to assert. (NotNull)
+     * @param keyword The keyword string. (NotNull) 
+     */
+    protected void assertNotContains(String str, String keyword) {
+        if (DfStringUtil.contains(str, keyword)) {
+            log("Asserted string: " + str); // might be large so show at log
+            fail("the string should not have the keyword but found: " + keyword);
+        }
+    }
+
+    /**
+     * Assert that the string does not contains the keyword. (ignore case)
+     * <pre>
+     * String str = "foo";
+     * assertContains(str, "ux"); <span style="color: #3F7E5E">// true</span>
+     * assertContains(str, "Foo"); <span style="color: #3F7E5E">// false</span>
+     * assertContains(str, "fo"); <span style="color: #3F7E5E">// false</span>
+     * assertContains(str, "oo"); <span style="color: #3F7E5E">// false</span>
+     * assertContains(str, "foo"); <span style="color: #3F7E5E">// false</span>
+     * </pre>
+     * @param str The string to assert. (NotNull)
+     * @param keyword The keyword string. (NotNull) 
+     */
+    protected void assertNotContainsIgnoreCase(String str, String keyword) {
+        if (DfStringUtil.containsIgnoreCase(str, keyword)) {
+            log("Asserted string: " + str); // might be large so show at log
+            fail("the string should not have the keyword but found: " + keyword);
         }
     }
 

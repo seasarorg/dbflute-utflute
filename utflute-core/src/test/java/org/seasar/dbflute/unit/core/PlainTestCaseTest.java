@@ -62,6 +62,32 @@ public class PlainTestCaseTest extends PlainTestCase {
     //                                                                       Assert Helper
     //                                                                       =============
     public void test_assertContains() throws Exception {
+        assertContains("foo", "fo");
+        try {
+            assertContains("foo", "Fo");
+            fail();
+        } catch (AssertionFailedError e) {
+            log(e.getMessage());
+        }
+        assertContainsIgnoreCase("foo", "Fo");
+        assertNotContains("foo", "ux");
+        assertNotContains("foo", "Fo");
+        try {
+            assertNotContains("foo", "fo");
+            fail();
+        } catch (AssertionFailedError e) {
+            log(e.getMessage());
+        }
+        assertNotContainsIgnoreCase("foo", "ux");
+        try {
+            assertNotContains("foo", "Fo");
+            fail();
+        } catch (AssertionFailedError e) {
+            log(e.getMessage());
+        }
+    }
+
+    public void test_assertContainsKeyword() throws Exception {
         assertContainsKeyword(newArrayList("foo", "bar", "qux"), "ar");
         try {
             assertContainsKeyword(newArrayList("foo", "bar", "qux"), "co");

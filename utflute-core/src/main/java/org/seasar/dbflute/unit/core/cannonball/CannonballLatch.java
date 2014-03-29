@@ -26,7 +26,7 @@ public class CannonballLatch {
     // ===================================================================================
     //                                                                           Attribute
     //                                                                           =========
-    protected final int _threadCount;
+    protected int _threadCount; // decremented when breakaway
     protected final CannonballLogger _logger;
     protected volatile CountDownLatch _ourLatch;
 
@@ -110,6 +110,15 @@ public class CannonballLatch {
             String msg = "Failed to await by your latch: latch=" + latch;
             throw new CannonballRetireException(msg, e);
         }
+    }
+
+    public synchronized void breakaway() {
+        decrementThreadCount();
+        reset();
+    }
+
+    protected void decrementThreadCount() {
+        --_threadCount;
     }
 
     public synchronized void reset() {

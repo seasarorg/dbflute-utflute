@@ -247,6 +247,52 @@ public class CannonballTest extends PlainTestCase {
         assertEquals(Arrays.asList(1), callNoList);
     }
 
+    public void test_cannonball_projectA_breakaway() throws Exception {
+        cannonball(new CannonballRun() {
+            public void drive(final CannonballCar car) {
+                car.projectA(new CannonballProjectA() {
+                    public void plan(CannonballDragon dragon) {
+                        dragon.releaseIfOvertime(2000);
+                        dragon.expectOvertime();
+                        log("Plan A");
+                    }
+                }, 1);
+                car.projectA(new CannonballProjectA() {
+                    public void plan(CannonballDragon dragon) {
+                        log("Plan B");
+                        sleep(100);
+                    }
+                }, 2);
+            }
+        }, new CannonballOption().threadCount(5).expectExceptionAny(AssertionFailedError.class));
+        cannonball(new CannonballRun() {
+            public void drive(final CannonballCar car) {
+                if (car.isEntryNumber(1)) {
+                    throw new IllegalStateException("breakaway");
+                }
+                car.projectA(new CannonballProjectA() {
+                    public void plan(CannonballDragon dragon) {
+                        log("Plan B");
+                        sleep(100);
+                    }
+                }, 2);
+            }
+        }, new CannonballOption().threadCount(2).expectExceptionAny(IllegalStateException.class));
+        cannonball(new CannonballRun() {
+            public void drive(final CannonballCar car) {
+                if (car.isEntryNumber(1)) {
+                    throw new AssertionFailedError("breakaway");
+                }
+                car.projectA(new CannonballProjectA() {
+                    public void plan(CannonballDragon dragon) {
+                        log("Plan B");
+                        sleep(100);
+                    }
+                }, 2);
+            }
+        }, new CannonballOption().threadCount(5).expectExceptionAny(AssertionFailedError.class));
+    }
+
     // ===================================================================================
     //                                                                        Entry Number
     //                                                                        ============

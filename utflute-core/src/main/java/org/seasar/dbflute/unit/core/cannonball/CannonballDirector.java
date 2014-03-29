@@ -194,17 +194,18 @@ public class CannonballDirector {
                         txRes = beginTransaction();
                     }
                     Object result = null;
-                    RuntimeException cause = null;
+                    boolean failure = false;
                     try {
                         final CannonballCar car = createCar(threadId, ourLatch, entryNumber, lockObj, option, logger);
                         run.drive(car);
                         result = car.getRunResult();
                     } catch (RuntimeException e) {
-                        cause = e;
+                        failure = true;
+                        throw e;
                     } finally {
                         if (txRes != null) {
                             try {
-                                if (cause == null && option.isCommitTransaction()) {
+                                if (!failure && option.isCommitTransaction()) {
                                     txRes.commit();
                                 } else {
                                     txRes.rollback();
@@ -215,13 +216,10 @@ public class CannonballDirector {
                         }
                         clearAccessContext();
                     }
-                    if (cause != null) {
-                        throw cause;
-                    }
                     return result;
                 } finally {
                     goal.countDown();
-                    ourLatch.reset(); // to release waiting threads
+                    ourLatch.breakaway(); // to release waiting threads
                 }
             }
         };

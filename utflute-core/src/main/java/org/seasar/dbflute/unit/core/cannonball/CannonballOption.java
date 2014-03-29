@@ -44,7 +44,7 @@ public class CannonballOption {
     protected boolean _commitTransaction;
     protected boolean _suppressTransaction;
     protected String _expectedExceptionMessageAny;
-    protected Class<? extends Exception> _expectedExceptionTypeAny;
+    protected Class<? extends Throwable> _expectedExceptionTypeAny;
     protected CannonballFinalizer _finalizer;
 
     // ===================================================================================
@@ -112,7 +112,7 @@ public class CannonballOption {
      * @param expectedExceptionType The type of expected exception. (NotNull)
      * @return this. (NotNull)
      */
-    public CannonballOption expectExceptionAny(Class<? extends Exception> expectedExceptionType) {
+    public CannonballOption expectExceptionAny(Class<? extends Throwable> expectedExceptionType) {
         _expectedExceptionTypeAny = expectedExceptionType;
         return this;
     }
@@ -207,7 +207,7 @@ public class CannonballOption {
         this._expectedExceptionMessageAny = expectedExceptionMessageAny;
     }
 
-    public Class<? extends Exception> getExpectedExceptionTypeAny() {
+    public Class<? extends Throwable> getExpectedExceptionTypeAny() {
         return _expectedExceptionTypeAny;
     }
 

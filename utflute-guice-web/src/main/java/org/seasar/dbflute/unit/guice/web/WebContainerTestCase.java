@@ -212,7 +212,7 @@ public abstract class WebContainerTestCase extends ContainerTestCase {
 
     protected int getMockResponseStatus() {
         final MockletHttpServletResponse response = getMockResponse();
-        return response != null ? response.getStatus() : null;
+        return response != null ? response.getStatus() : 0;
     }
 
     protected String getMockResponseString() {

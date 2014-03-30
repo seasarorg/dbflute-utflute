@@ -88,7 +88,7 @@ public class MockletHttpServletResponseImpl implements MockletHttpServletRespons
 
     @Deprecated
     public String encodeRedirectUrl(String url) {
-        return encodeRedirectUrl(url);
+        return encodeRedirectURL(url);
     }
 
     public int getStatus() {

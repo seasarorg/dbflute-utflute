@@ -36,6 +36,14 @@ public class CannonballWatchingStatus {
     //                                                                           Attribute
     //                                                                           =========
     protected final Set<String> _watchingMarkSet = new HashSet<String>();
+    protected final String _projectAKey;
+
+    // ===================================================================================
+    //                                                                         Constructor
+    //                                                                         ===========
+    public CannonballWatchingStatus(String projectAKey) {
+        _projectAKey = projectAKey;
+    }
 
     // ===================================================================================
     //                                                                         Mark Status
@@ -58,5 +66,12 @@ public class CannonballWatchingStatus {
     public boolean isWaiting() {
         // both are checked because of two or more watch threads
         return !_watchingMarkSet.contains(DONE_MARK) && !_watchingMarkSet.contains(FORCEDLY_MARK);
+    }
+
+    // ===================================================================================
+    //                                                                            Accessor
+    //                                                                            ========
+    public String getProjectAKey() {
+        return _projectAKey;
     }
 }

@@ -247,7 +247,47 @@ public class CannonballTest extends PlainTestCase {
         assertEquals(Arrays.asList(1), callNoList);
     }
 
-    public void test_cannonball_projectA_breakaway() throws Exception {
+    public void test_cannonball_projectA_leaveAlone_comeBack() throws Exception {
+        cannonball(new CannonballRun() {
+            public void drive(final CannonballCar car) {
+                car.projectA(new CannonballProjectA() {
+                    public void plan(CannonballDragon dragon) {
+                        log("Plan A");
+                    }
+                }, 1);
+                car.projectA(new CannonballProjectA() {
+                    public void plan(CannonballDragon dragon) {
+                        dragon.releaseIfOvertime(500);
+                        dragon.expectOvertime();
+                        log("Plan B");
+                        doWait();
+                    }
+                }, 2);
+                car.projectA(new CannonballProjectA() {
+                    public void plan(CannonballDragon dragon) {
+                        dragon.releaseIfOvertime(500);
+                        log("Plan C");
+                        doWait();
+                    }
+                }, 3);
+                if (car.isEntryNumber(1)) {
+                    assertEquals(3, car.getOurLatch().getInitialCount());
+                    assertEquals(1, car.getOurLatch().getActiveCount());
+                    log("nofityAll()");
+                    doNotifyAll();
+                    sleep(200); // wait for come-back
+                }
+                car.restart();
+                assertEquals(3, car.getOurLatch().getActiveCount());
+                car.restart();
+            }
+        }, new CannonballOption().threadCount(3));
+    }
+
+    // -----------------------------------------------------
+    //                                            Break Away
+    //                                            ----------
+    public void test_cannonball_projectA_breakAway_basic() throws Exception {
         cannonball(new CannonballRun() {
             public void drive(final CannonballCar car) {
                 car.projectA(new CannonballProjectA() {
@@ -293,6 +333,19 @@ public class CannonballTest extends PlainTestCase {
         }, new CannonballOption().threadCount(5).expectExceptionAny(AssertionFailedError.class));
     }
 
+    public void test_cannonball_projectA_breakAway_exception() throws Exception {
+        cannonball(new CannonballRun() {
+            public void drive(final CannonballCar car) {
+                car.projectA(new CannonballProjectA() {
+                    public void plan(CannonballDragon dragon) {
+                        dragon.releaseIfOvertime(500);
+                        throw new IllegalStateException("plan");
+                    }
+                }, 1);
+            }
+        }, new CannonballOption().threadCount(3).expectExceptionAny("plan"));
+    }
+
     // ===================================================================================
     //                                                                        Entry Number
     //                                                                        ============
@@ -303,5 +356,20 @@ public class CannonballTest extends PlainTestCase {
                 car.isEntryNumber(99999);
             }
         }, new CannonballOption().expectExceptionAny("over count"));
+    }
+
+    // ===================================================================================
+    //                                                                       Assist Helper
+    //                                                                       =============
+    protected synchronized void doWait() {
+        try {
+            wait();
+        } catch (InterruptedException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    protected synchronized void doNotifyAll() {
+        notifyAll();
     }
 }

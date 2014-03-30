@@ -17,6 +17,8 @@ package org.seasar.dbflute.unit.core.cannonball;
 
 import junit.framework.AssertionFailedError;
 
+import org.seasar.dbflute.exception.factory.ExceptionMessageBuilder;
+
 /**
  * @author jflute
  * @since 0.3.8 (2014/02/25 Tuesday)
@@ -33,7 +35,8 @@ public class CannonballCar {
     protected final int _countOfEntry; // to check
     protected final CannonballLogger _logger;
     protected Object _runResult;
-    protected Long projectATimeLimit;
+    protected Long _projectATimeLimit;
+    protected boolean _suppressDecrementWhenBreakAway;
 
     // ===================================================================================
     //                                                                         Constructor
@@ -77,7 +80,7 @@ public class CannonballCar {
      * </pre>
      */
     public void restart() {
-        _ourLatch.await();
+        _ourLatch.await(CannonballLatch.DEFAULT_LATCH_NAME, getEntryNumber());
     }
 
     /**
@@ -102,27 +105,27 @@ public class CannonballCar {
      */
     public void projectA(CannonballProjectA projectA, final int entryNumber) {
         checkEntryNumber(entryNumber);
-        _ourLatch.awaitSilently(); // all cars gathers at first
-        final CannonballWatchingStatus watchingStatus = new CannonballWatchingStatus();
+        final String projectAKey = generateProjectAKey(projectA, entryNumber);
+        _ourLatch.lineUpProjectA(projectAKey, entryNumber, getEntryNumber()); // all cars gathers at first
+        final CannonballWatchingStatus watchingStatus = new CannonballWatchingStatus(projectAKey);
         CannonballDragon dragon = null;
         if (isEntryNumber(entryNumber)) {
             _logger.log("...Executing projectA: " + entryNumber);
             dragon = createDragon(watchingStatus);
-            dragon.releaseIfOvertime(3000); // fall-back watch
-            projectA.plan(dragon); // execute the plan
-            synchronized (watchingStatus) {
+            dragon.releaseIfOvertime(getFallbackOvertimeLimit()); // fall-back watch
+            executeProjectA(projectA, dragon);
+            synchronized (watchingStatus) { // with watching thread
                 watchingStatus.markDone(); // to suppress unnecessary forcedly count down
             }
         }
-        synchronized (watchingStatus) {
+        synchronized (watchingStatus) { // with watching thread
             final boolean forcedly = watchingStatus.containsForcedly();
             if (!forcedly) { // except forcedly car
-                restart(); // not plan target cars are always here
+                _ourLatch.waitForProjectA(projectAKey, entryNumber, getEntryNumber());
             } else { // forcedly car
-                _logger.log("...Coming back from projectA finally: " + entryNumber);
+                _ourLatch.comeBackFromOvertimeProjectA(projectAKey, entryNumber);
             }
             if (isEntryNumber(entryNumber)) {
-                // dragon is not null here
                 if (dragon.isExpectedNormallyDone()) {
                     if (forcedly) {
                         String msg = "expected: normally done but was: the plan overtime: " + entryNumber;
@@ -139,8 +142,28 @@ public class CannonballCar {
         }
     }
 
+    protected int getFallbackOvertimeLimit() {
+        return 3000; // as default
+    }
+
+    protected String generateProjectAKey(CannonballProjectA projectA, int entryNumber) {
+        return Integer.toHexString((projectA.getClass().getName() + String.valueOf(entryNumber)).hashCode());
+    }
+
     protected CannonballDragon createDragon(CannonballWatchingStatus watchingStatus) {
         return new CannonballDragon(this, watchingStatus);
+    }
+
+    protected void executeProjectA(CannonballProjectA projectA, CannonballDragon dragon) {
+        try {
+            projectA.plan(dragon); // execute the plan
+        } catch (RuntimeException e) {
+            _suppressDecrementWhenBreakAway = true;
+            throw e;
+        } catch (Error e) {
+            _suppressDecrementWhenBreakAway = true;
+            throw e;
+        }
     }
 
     // ===================================================================================
@@ -158,15 +181,37 @@ public class CannonballCar {
 
     protected void checkEntryNumber(int entryNumber) {
         if (entryNumber > _countOfEntry) {
-            String msg = "The entry number is over count of entries: entryNumber=" + entryNumber + ", countOfEntry="
-                    + _countOfEntry;
-            throw new IllegalArgumentException(msg);
+            throwCannonballEntryNumberOverException(entryNumber);
         }
+    }
+
+    protected void throwCannonballEntryNumberOverException(int entryNumber) {
+        final ExceptionMessageBuilder br = new ExceptionMessageBuilder();
+        br.addNotice("The entry number is over count of entries.");
+        br.addItem("Entry Number");
+        br.addElement(entryNumber);
+        br.addItem("Count of Entry");
+        br.addElement(_countOfEntry);
+        final String msg = br.buildExceptionMessage();
+        throw new IllegalStateException(msg);
     }
 
     // ===================================================================================
     //                                                                          Run Result
     //                                                                          ==========
+    /**
+     * Set the run result of the car to assert it.
+     * <pre>
+     * cannonball(new CannonballRun() {
+     *     public void drive(final CannonballCar car) {
+     *         ...
+     *         Object result = ...;
+     *         car.goal(result); // *here
+     *     }
+     * }, new CannonballOption().expectSameResult());
+     * </pre>
+     * @param runResult The result instance of the run. (NullAllowed)
+     */
     public void goal(Object runResult) {
         this._runResult = runResult;
     }
@@ -228,5 +273,13 @@ public class CannonballCar {
      */
     public Object getRunResult() {
         return _runResult;
+    }
+
+    /**
+     * Does it suppress decrementing active thread count when break-away? (internal)
+     * @return The determination, true or false.
+     */
+    public boolean isSuppressDecrementWhenBreakAway() {
+        return _suppressDecrementWhenBreakAway;
     }
 }

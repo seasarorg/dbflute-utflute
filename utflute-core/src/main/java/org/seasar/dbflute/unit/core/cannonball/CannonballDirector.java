@@ -24,6 +24,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import junit.framework.AssertionFailedError;
+
 import org.seasar.dbflute.unit.core.transaction.TransactionResource;
 
 /**
@@ -74,13 +76,13 @@ public class CannonballDirector {
                 }
             }
         } catch (CannonballRetireException e) {
-            if (!option.isCheckExpectedExceptionAny()) {
-                throw e;
-            }
             final Throwable cause = e.getCause();
-            if (option.isMatchExpectedExceptionAny(cause)) {
+            if (option.isCheckExpectedExceptionAny() && option.isMatchExpectedExceptionAny(cause)) {
                 thrownAny = cause;
             } else {
+                if (cause instanceof AssertionFailedError) {
+                    throw (AssertionFailedError) cause;
+                }
                 throw e;
             }
         }
@@ -180,6 +182,8 @@ public class CannonballDirector {
         return new Callable<Object>() {
             public Object call() { // each thread here
                 final long threadId = Thread.currentThread().getId();
+                final CannonballCar car = createCar(threadId, ourLatch, entryNumber, lockObj, option, logger);
+                boolean failure = false;
                 try {
                     ready.countDown();
                     try {
@@ -194,9 +198,7 @@ public class CannonballDirector {
                         txRes = beginTransaction();
                     }
                     Object result = null;
-                    boolean failure = false;
                     try {
-                        final CannonballCar car = createCar(threadId, ourLatch, entryNumber, lockObj, option, logger);
                         run.drive(car);
                         result = car.getRunResult();
                     } catch (RuntimeException e) {
@@ -219,7 +221,14 @@ public class CannonballDirector {
                     return result;
                 } finally {
                     goal.countDown();
-                    ourLatch.breakaway(); // to release waiting threads
+
+                    // release waiting threads
+                    final boolean suppressDecrement = car.isSuppressDecrementWhenBreakAway();
+                    if (failure) {
+                        ourLatch.breakAway(entryNumber, suppressDecrement);
+                    } else {
+                        ourLatch.complete(entryNumber, suppressDecrement);
+                    }
                 }
             }
         };

@@ -64,6 +64,9 @@ public class CannonballDragon {
         return this;
     }
 
+    // ===================================================================================
+    //                                                                            Overtime
+    //                                                                            ========
     /**
      * Release waiting cars if overtime. <br />
      * The default allowed time for the plan is 3000 milliseconds. <br />
@@ -77,14 +80,17 @@ public class CannonballDragon {
                 for (CannonballWatcher watcher : _watcherList) {
                     watcher.close();
                 }
-                final CannonballWatcher watcher = createPlanWatcher(millis);
+                final CannonballWatcher watcher = createWatcher(millis);
                 _watcherList.add(watcher);
                 watcher.watch();
             }
         }
     }
 
-    protected CannonballWatcher createPlanWatcher(final long millis) {
+    // ===================================================================================
+    //                                                                             Watcher
+    //                                                                             =======
+    protected CannonballWatcher createWatcher(final long millis) {
         return new CannonballWatcher(millis);
     }
 
@@ -116,11 +122,9 @@ public class CannonballDragon {
                             return;
                         }
                         if (isWaiting()) {
-                            final CannonballLogger logger = _car.getLogger();
                             final int entryNumber = _car.getEntryNumber();
-                            logger.log("...Releasing cars waiting projectA (overtime): left=" + entryNumber);
                             final CannonballLatch ourLatch = _car.getOurLatch();
-                            ourLatch.forcedlyCountDown(); // release waiting cars
+                            ourLatch.leaveProjectAAlone(_watchingStatus.getProjectAKey(), entryNumber); // release waiting cars
                             _watchingStatus.markForecdly(); // to suppress unnecessary restart of forcedly car
                         }
                     }

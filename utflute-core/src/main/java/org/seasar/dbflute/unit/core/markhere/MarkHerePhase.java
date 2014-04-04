@@ -15,48 +15,26 @@
  */
 package org.seasar.dbflute.unit.core.markhere;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 /**
  * @author jflute
  * @since 0.4.0 (2014/03/16 Sunday)
  */
-public class MarkHereInfo {
+public class MarkHerePhase {
 
     // ===================================================================================
     //                                                                           Attribute
     //                                                                           =========
     protected final String _mark;
-    protected Integer _currentPhaseNumber = 1;
-    protected final Map<Integer, MarkHerePhase> _markedPhaseMap = new LinkedHashMap<Integer, MarkHerePhase>();
+    protected final Integer _phaseNumber;
+    protected int _markedCount;
+    protected boolean _asserted;
 
     // ===================================================================================
     //                                                                         Constructor
     //                                                                         ===========
-    public MarkHereInfo(String mark) {
+    public MarkHerePhase(String mark, Integer phaseNumber) {
         _mark = mark;
-    }
-
-    // ===================================================================================
-    //                                                                      Phase Handling
-    //                                                                      ==============
-    public void markPhase() {
-        MarkHerePhase phase = getCurrentPhase();
-        if (phase == null) {
-            phase = createPhase(_mark, _currentPhaseNumber);
-            _markedPhaseMap.put(_currentPhaseNumber, phase);
-        }
-        phase.incrementMarkedCount();
-    }
-
-    protected MarkHerePhase createPhase(String mark, Integer phaseNumber) {
-        return new MarkHerePhase(mark, phaseNumber);
-    }
-
-    public boolean isNonAssertedPhase() {
-        final MarkHerePhase phase = getCurrentPhase();
-        return phase != null && !phase.isAsserted();
+        _phaseNumber = phaseNumber;
     }
 
     // ===================================================================================
@@ -65,12 +43,10 @@ public class MarkHereInfo {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("mark").append(":{");
-        sb.append(_mark);
-        final int phaseSize = _markedPhaseMap.size();
-        sb.append(", has ").append(phaseSize).append(" ").append(phaseSize > 1 ? "phases" : "phase ");
-        final MarkHerePhase phase = getCurrentPhase();
-        sb.append(", current=").append(phase).append(phase == null ? ":(no mark)" : "");
+        sb.append("phase:{");
+        sb.append(_phaseNumber);
+        sb.append(", marked=").append(_markedCount);
+        sb.append(", asserted=").append(_asserted);
         sb.append("}");
         return sb.toString();
     }
@@ -82,15 +58,19 @@ public class MarkHereInfo {
         return _mark;
     }
 
-    public Integer getCurrentPhaseNumber() {
-        return _currentPhaseNumber;
+    public int getMarkedCount() {
+        return _markedCount;
     }
 
-    public void finishPhase() {
-        ++_currentPhaseNumber;
+    public void incrementMarkedCount() {
+        _markedCount++;
     }
 
-    public MarkHerePhase getCurrentPhase() {
-        return _markedPhaseMap.get(_currentPhaseNumber);
+    public boolean isAsserted() {
+        return _asserted;
+    }
+
+    public void finishAssert() {
+        _asserted = true;
     }
 }

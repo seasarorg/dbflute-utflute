@@ -42,12 +42,10 @@ public class MarkHereManager {
         }
         MarkHereInfo info = _xmarkMap.get(mark);
         if (info == null) {
-            info = new MarkHereInfo();
+            info = new MarkHereInfo(mark);
             _xmarkMap.put(mark, info);
-            info.setMark(mark);
         }
-        info.incrementCount();
-        _xmarkMap.put(mark, info);
+        info.markPhase();
     }
 
     /**
@@ -58,9 +56,9 @@ public class MarkHereManager {
         boolean existsMark = false;
         if (_xmarkMap != null) {
             final MarkHereInfo info = _xmarkMap.get(mark);
-            if (info != null) {
+            if (isFoundMark(info)) {
                 existsMark = true;
-                info.finishAssertion();
+                info.finishPhase();
             }
         }
         if (!existsMark) {
@@ -81,6 +79,11 @@ public class MarkHereManager {
         }
     }
 
+    protected boolean isFoundMark(MarkHereInfo info) {
+        // current phase is basically non-asserted but just in case
+        return info != null && info.isNonAssertedPhase();
+    }
+
     /**
      * Is the mark marked? (found the mark in existing marks?)
      * @param mark The your original mark expression as string. (NotNull)
@@ -97,7 +100,7 @@ public class MarkHereManager {
         MarkHereInfo nonAssertedInfo = null;
         for (Entry<String, MarkHereInfo> entry : _xmarkMap.entrySet()) {
             final MarkHereInfo info = entry.getValue();
-            if (!info.isAsserted()) {
+            if (info.isNonAssertedPhase()) {
                 nonAssertedInfo = info;
                 break;
             }
@@ -119,7 +122,7 @@ public class MarkHereManager {
             br.addElement("    assertMarked(\"foo\");");
             br.addElement("    assertMarked(\"bar\");");
             br.addItem("Non-Asserted Mark");
-            br.addElement(nonAssertedInfo);
+            br.addElement(nonAssertedInfo.getMark());
             br.addItem("Mark Map");
             for (Entry<String, MarkHereInfo> entry : _xmarkMap.entrySet()) {
                 br.addElement(entry.getValue());

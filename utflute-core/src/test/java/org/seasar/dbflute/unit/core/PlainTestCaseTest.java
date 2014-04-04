@@ -27,7 +27,7 @@ public class PlainTestCaseTest extends PlainTestCase {
     //                                                                            ========
     @Override
     protected void tearDown() throws Exception {
-        if ("test_markHere_nonAsserted".equals(getName())) {
+        if (getName().startsWith("test_markHere_nonAsserted")) {
             try {
                 super.tearDown();
             } catch (AssertionFailedError e) {
@@ -54,8 +54,45 @@ public class PlainTestCaseTest extends PlainTestCase {
         assertMarked("qux");
     }
 
-    public void test_markHere_nonAsserted() throws Exception {
+    public void test_markHere_phase() throws Exception {
         markHere("foo");
+        markHere("bar");
+        assertMarked("foo");
+        try {
+            assertMarked("foo");
+            fail();
+        } catch (AssertionFailedError e) {
+            log(e.getMessage());
+        }
+        markHere("foo");
+        markHere("foo");
+        assertMarked("foo");
+        try {
+            assertMarked("foo");
+            fail();
+        } catch (AssertionFailedError e) {
+            log(e.getMessage());
+        }
+        assertMarked("bar");
+    }
+
+    public void test_markHere_nonAsserted_basic() throws Exception {
+        markHere("foo");
+    }
+
+    public void test_markHere_nonAsserted_contains_assert() throws Exception {
+        markHere("foo");
+        markHere("foo");
+        assertMarked("foo");
+        markHere("bar");
+        markHere("qux");
+    }
+
+    public void test_markHere_nonAsserted_many_mark() throws Exception {
+        markHere("foo");
+        markHere("foo");
+        markHere("bar");
+        markHere("qux");
     }
 
     // ===================================================================================

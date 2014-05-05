@@ -26,7 +26,9 @@ import java.util.concurrent.Future;
 
 import junit.framework.AssertionFailedError;
 
+import org.seasar.dbflute.exception.factory.ExceptionMessageBuilder;
 import org.seasar.dbflute.unit.core.transaction.TransactionResource;
+import org.seasar.dbflute.util.Srl;
 
 /**
  * @author jflute
@@ -58,11 +60,16 @@ public class CannonballDirector {
             String msg = "The argument 'option' should be not null.";
             throw new IllegalArgumentException(msg);
         }
-        Throwable thrownAny = null;
+        final List<CannonballRetireException> retireExList = new ArrayList<CannonballRetireException>();
         try {
             try {
                 for (int i = 0; i < option.getRepeatCount(); i++) {
-                    doThreadFire(execution, option);
+                    final List<Object> resultList = doThreadFire(execution, option);
+                    for (Object result : resultList) {
+                        if (result instanceof CannonballRetireException) {
+                            retireExList.add((CannonballRetireException) result);
+                        }
+                    }
                 }
             } finally {
                 final CannonballFinalizer finallyRunner = option.getFinalizer();
@@ -76,22 +83,12 @@ public class CannonballDirector {
                 }
             }
         } catch (CannonballRetireException e) {
-            final Throwable cause = e.getCause();
-            if (option.isCheckExpectedExceptionAny() && option.isMatchExpectedExceptionAny(cause)) {
-                thrownAny = cause;
-            } else {
-                if (cause instanceof AssertionFailedError) {
-                    throw (AssertionFailedError) cause;
-                }
-                throw e;
-            }
+            retireExList.add(e);
         }
         if (option.isCheckExpectedExceptionAny()) {
-            if (thrownAny != null) {
-                log("the expected exception:" + ln() + thrownAny.getMessage());
-            } else {
-                fail("The excutions should throw the exception: " + option.getExpectedExpceptionAnyExp());
-            }
+            handleExpectedExceptionAny(option, retireExList);
+        } else {
+            handleNormalException(retireExList);
         }
     }
 
@@ -142,24 +139,25 @@ public class CannonballDirector {
         };
     }
 
-    protected List<Object> handleFuture(CannonballOption option, final List<Future<Object>> futureList) {
+    protected List<Object> handleFuture(CannonballOption option, List<Future<Object>> futureList) {
         final List<Object> resultList = new ArrayList<Object>();
         for (Future<Object> future : futureList) {
+            Object result = null;
             try {
-                final Object result = future.get();
-                resultList.add(result);
+                result = future.get();
             } catch (InterruptedException e) {
                 String msg = "future.get() was interrupted!";
                 throw new IllegalStateException(msg, e);
-            } catch (ExecutionException e) {
+            } catch (ExecutionException continued) {
                 String msg = "Failed to fire the thread: " + future;
-                throw new CannonballRetireException(msg, e.getCause());
+                result = new CannonballRetireException(msg, continued.getCause());
             }
+            resultList.add(result);
         }
         return resultList;
     }
 
-    protected <RESULT> void assertSameResultIfExpected(CannonballOption option, final List<RESULT> resultList) {
+    protected <RESULT> void assertSameResultIfExpected(CannonballOption option, List<RESULT> resultList) {
         if (option.isExpectedSameResult()) {
             RESULT preResult = null;
             for (RESULT result : resultList) {
@@ -204,6 +202,9 @@ public class CannonballDirector {
                     } catch (RuntimeException e) {
                         failure = true;
                         throw e;
+                    } catch (Error e) {
+                        failure = true;
+                        throw e;
                     } finally {
                         if (txRes != null) {
                             try {
@@ -238,6 +239,128 @@ public class CannonballDirector {
             CannonballOption option, CannonballLogger logger) {
         final int countOfEntry = option.getThreadCount();
         return new CannonballCar(threadId, ourLatch, entryNumber, lockObj, countOfEntry, logger);
+    }
+
+    // ===================================================================================
+    //                                                                  Exception Handling
+    //                                                                  ==================
+    // -----------------------------------------------------
+    //                                    Expected Exception
+    //                                    ------------------
+    protected void handleExpectedExceptionAny(CannonballOption option, List<CannonballRetireException> retireExList) {
+        final List<Throwable> expectedCauseList = new ArrayList<Throwable>();
+        final List<Throwable> unexpectedCauseList = new ArrayList<Throwable>();
+        final String expectedExpceptionAnyExp = option.getExpectedExpceptionAnyExp();
+        if (retireExList.isEmpty()) {
+            fail("The cannonball cars should throw the exception: " + expectedExpceptionAnyExp);
+        }
+        for (CannonballRetireException retireEx : retireExList) {
+            final Throwable cause = retireEx.getCause();
+            final Throwable targetCause;
+            if (cause != null) {
+                if (cause instanceof AssertionFailedError) { // already asserted
+                    throw (AssertionFailedError) cause; // it comes first
+                }
+                targetCause = cause;
+            } else {
+                targetCause = retireEx;
+            }
+            if (option.isMatchExpectedExceptionAny(targetCause)) {
+                expectedCauseList.add(targetCause);
+            } else {
+                unexpectedCauseList.add(targetCause);
+            }
+        }
+        if (expectedCauseList.isEmpty()) { // and unexpected exception found
+            throwUnexpectedExceptionFound(unexpectedCauseList, expectedExpceptionAnyExp);
+        } else { // expected cause exists
+            handleExpectedExceptionFound(expectedCauseList, unexpectedCauseList, expectedExpceptionAnyExp);
+        }
+    }
+
+    protected void throwUnexpectedExceptionFound(List<Throwable> unexpectedCauseList, String expectedExpceptionAnyExp) {
+        final ExceptionMessageBuilder br = new ExceptionMessageBuilder();
+        br.addNotice("The unexpected exception was thrown in cannonball().");
+        br.addItem("Advice");
+        br.addElement("Expect the exception is");
+        br.addElement("  '" + expectedExpceptionAnyExp + "'.");
+        br.addElement("But such an exception was not found,");
+        br.addElement("while unexpected exception was found.");
+        br.addItem("Unexpected Exception");
+        br.addElement("The unexpected exception are following.");
+        br.addElement("(And you can also see for the detail in your log)");
+        for (Throwable unexpectedCause : unexpectedCauseList) {
+            final String oneLine = buildOneLineExceptionMessage(unexpectedCause);
+            br.addElement(unexpectedCause.getClass().getName());
+            br.addElement("  '" + oneLine + "'"); // one line
+            log(unexpectedCause); // for detail
+        }
+        final String msg = br.buildExceptionMessage();
+        throw new AssertionFailedError(msg);
+    }
+
+    protected String buildOneLineExceptionMessage(Throwable unexpectedCause) {
+        final String message = unexpectedCause.getMessage();
+        if (message == null) {
+            return "null";
+        }
+        if (message.contains(ln())) {
+            return Srl.substringFirstFront(message, "\n") + "...";
+        }
+        return message;
+    }
+
+    protected void handleExpectedExceptionFound(List<Throwable> expectedCauseList, List<Throwable> unexpectedCauseList,
+            String expectedExpceptionAnyExp) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ln()).append("_/_/_/_/_/_/_/_/_/_/");
+        sb.append(ln()).append(" Expected exception");
+        sb.append(ln()).append("_/_/_/_/_/_/_/_/_/_/");
+        buildExceptionOverview(sb, expectedCauseList);
+        sb.append(ln());
+        final boolean unexpected = !unexpectedCauseList.isEmpty();
+        if (unexpected) {
+            sb.append(ln()).append("_/_/_/_/_/_/_/_/_/_/_/");
+            sb.append(ln()).append(" Unexpected Exception");
+            sb.append(ln()).append("_/_/_/_/_/_/_/_/_/_/_/");
+            buildExceptionOverview(sb, unexpectedCauseList);
+            sb.append(ln());
+        }
+        sb.append(ln());
+        final String supplement = (unexpected ? " (with unexpected)" : "");
+        sb.append("*The expected exception" + supplement + " was found: " + expectedExpceptionAnyExp);
+        log(sb.toString());
+    }
+
+    protected void buildExceptionOverview(StringBuilder sb, List<Throwable> unexpectedCauseList) {
+        for (Throwable unexpectedCause : unexpectedCauseList) {
+            final String msg = unexpectedCause.getMessage(); // output all string instead of no stack trace
+            sb.append(ln()).append(unexpectedCause.getClass().getName()).append(": ").append(msg);
+        }
+    }
+
+    // -----------------------------------------------------
+    //                                      Normal Exception
+    //                                      ----------------
+    protected void handleNormalException(List<CannonballRetireException> retireExList) {
+        if (retireExList.isEmpty()) {
+            return;
+        }
+        boolean titleDone = false;
+        for (CannonballRetireException retireEx : retireExList) {
+            final Throwable cause = retireEx.getCause();
+            if (cause instanceof AssertionFailedError) {
+                throw (AssertionFailedError) cause;
+            }
+            if (!titleDone) {
+                log("_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/");
+                log(" Cannonball Retire Exception");
+                log("_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/");
+                titleDone = true;
+            }
+            log(cause != null ? cause : retireEx);
+        }
+        throw retireExList.get(0); // first exception is delegated
     }
 
     // ===================================================================================

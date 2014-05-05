@@ -113,7 +113,7 @@ public class CannonballCar {
             _logger.log("...Executing projectA: " + entryNumber);
             dragon = createDragon(watchingStatus);
             dragon.releaseIfOvertime(getFallbackOvertimeLimit()); // fall-back watch
-            executeProjectA(projectA, dragon);
+            executeProjectA(projectA, dragon); // watching thread release waiting cars when exception
             synchronized (watchingStatus) { // with watching thread
                 watchingStatus.markDone(); // to suppress unnecessary forcedly count down
             }
@@ -140,6 +140,7 @@ public class CannonballCar {
                 }
             }
         }
+        teaBreak(100); // wait for broken car handling when assertion failure (for safety but inexact)
     }
 
     protected int getFallbackOvertimeLimit() {
@@ -158,12 +159,17 @@ public class CannonballCar {
         try {
             projectA.plan(dragon); // execute the plan
         } catch (RuntimeException e) {
-            _suppressDecrementWhenBreakAway = true;
+            adjustDecrementWhenBreakAway();
             throw e;
         } catch (Error e) {
-            _suppressDecrementWhenBreakAway = true;
+            adjustDecrementWhenBreakAway();
             throw e;
         }
+    }
+
+    protected void adjustDecrementWhenBreakAway() {
+        // watching thread will release waiting cars and decrement thread count later
+        _suppressDecrementWhenBreakAway = true;
     }
 
     // ===================================================================================

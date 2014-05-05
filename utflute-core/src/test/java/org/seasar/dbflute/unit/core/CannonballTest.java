@@ -24,10 +24,13 @@ import java.util.Set;
 
 import junit.framework.AssertionFailedError;
 
+import org.seasar.dbflute.exception.IllegalConditionBeanOperationException;
+import org.seasar.dbflute.exception.factory.ExceptionMessageBuilder;
 import org.seasar.dbflute.unit.core.cannonball.CannonballCar;
 import org.seasar.dbflute.unit.core.cannonball.CannonballDragon;
 import org.seasar.dbflute.unit.core.cannonball.CannonballOption;
 import org.seasar.dbflute.unit.core.cannonball.CannonballProjectA;
+import org.seasar.dbflute.unit.core.cannonball.CannonballRetireException;
 import org.seasar.dbflute.unit.core.cannonball.CannonballRun;
 
 /**
@@ -72,7 +75,7 @@ public class CannonballTest extends PlainTestCase {
                     }
                 }
             }, new CannonballOption().expectSameResult());
-            fail();
+            failAsIllegalState();
         } catch (AssertionFailedError e) {
             log(e.getMessage());
         }
@@ -145,53 +148,63 @@ public class CannonballTest extends PlainTestCase {
     public void test_cannonball_projectA_normallyDone_expectedBut_basic() throws Exception {
         final Set<Integer> beforeNoSet = Collections.synchronizedSet(new HashSet<Integer>());
         final List<Integer> callNoList = Collections.synchronizedList(new ArrayList<Integer>());
-        cannonball(new CannonballRun() {
-            public void drive(final CannonballCar car) {
-                car.projectA(new CannonballProjectA() {
-                    public void plan(CannonballDragon dragon) {
-                        dragon.expectNormallyDone();
-                        log(car);
-                        callNoList.add(car.getEntryNumber());
-                        sleep(5000);
+        try {
+            cannonball(new CannonballRun() {
+                public void drive(final CannonballCar car) {
+                    car.projectA(new CannonballProjectA() {
+                        public void plan(CannonballDragon dragon) {
+                            dragon.expectNormallyDone();
+                            log(car);
+                            callNoList.add(car.getEntryNumber());
+                            sleep(5000);
+                        }
+                    }, 1);
+                    beforeNoSet.add(car.getEntryNumber());
+                    log("(after ProjectA) beforeNoSet: " + beforeNoSet);
+                    if (car.isEntryNumber(2)) {
+                        assertEquals(1, beforeNoSet.size()); // another thread still sleeps
+                    } else { // entryNumber: 1
+                        fail(); // not coming here
                     }
-                }, 1);
-                beforeNoSet.add(car.getEntryNumber());
-                log("(after ProjectA) beforeNoSet: " + beforeNoSet);
-                if (car.isEntryNumber(2)) {
-                    assertEquals(1, beforeNoSet.size()); // another thread still sleeps
-                } else { // entryNumber: 1
-                    fail(); // not coming here
+                    car.goal("ProjectA");
                 }
-                car.goal("ProjectA");
-            }
-        }, new CannonballOption().threadCount(2).expectExceptionAny("expected: normally done"));
+            }, new CannonballOption().threadCount(2));
+            failAsIllegalState();
+        } catch (AssertionFailedError e) {
+            assertContains(e.getMessage(), "expected: normally done");
+        }
         assertEquals(Arrays.asList(1), callNoList);
     }
 
     public void test_cannonball_projectA_normallyDone_expectedBut_speedy() throws Exception {
         final Set<Integer> beforeNoSet = Collections.synchronizedSet(new HashSet<Integer>());
         final List<Integer> callNoList = Collections.synchronizedList(new ArrayList<Integer>());
-        cannonball(new CannonballRun() {
-            public void drive(final CannonballCar car) {
-                car.projectA(new CannonballProjectA() {
-                    public void plan(CannonballDragon dragon) {
-                        dragon.expectNormallyDone();
-                        dragon.releaseIfOvertime(500);
-                        log(car);
-                        callNoList.add(car.getEntryNumber());
-                        sleep(1000);
+        try {
+            cannonball(new CannonballRun() {
+                public void drive(final CannonballCar car) {
+                    car.projectA(new CannonballProjectA() {
+                        public void plan(CannonballDragon dragon) {
+                            dragon.expectNormallyDone();
+                            dragon.releaseIfOvertime(500);
+                            log(car);
+                            callNoList.add(car.getEntryNumber());
+                            sleep(1000);
+                        }
+                    }, 1);
+                    beforeNoSet.add(car.getEntryNumber());
+                    log("(after ProjectA) beforeNoSet: " + beforeNoSet);
+                    if (car.isEntryNumber(2)) {
+                        assertEquals(1, beforeNoSet.size()); // another thread still sleeps
+                    } else { // entryNumber: 1
+                        fail(); // not coming here
                     }
-                }, 1);
-                beforeNoSet.add(car.getEntryNumber());
-                log("(after ProjectA) beforeNoSet: " + beforeNoSet);
-                if (car.isEntryNumber(2)) {
-                    assertEquals(1, beforeNoSet.size()); // another thread still sleeps
-                } else { // entryNumber: 1
-                    fail(); // not coming here
+                    car.goal("ProjectA");
                 }
-                car.goal("ProjectA");
-            }
-        }, new CannonballOption().threadCount(2).expectExceptionAny("expected: normally done"));
+            }, new CannonballOption().threadCount(2));
+            failAsIllegalState();
+        } catch (AssertionFailedError e) {
+            assertContains(e.getMessage(), "expected: normally done");
+        }
         assertEquals(Arrays.asList(1), callNoList);
     }
 
@@ -224,26 +237,31 @@ public class CannonballTest extends PlainTestCase {
     public void test_cannonball_projectA_overtime_expectedBut() throws Exception {
         final Set<Integer> beforeNoSet = Collections.synchronizedSet(new HashSet<Integer>());
         final List<Integer> callNoList = Collections.synchronizedList(new ArrayList<Integer>());
-        cannonball(new CannonballRun() {
-            public void drive(final CannonballCar car) {
-                car.projectA(new CannonballProjectA() {
-                    public void plan(CannonballDragon dragon) {
-                        dragon.expectOvertime();
-                        log(car);
-                        callNoList.add(car.getEntryNumber());
-                        sleep(1000);
+        try {
+            cannonball(new CannonballRun() {
+                public void drive(final CannonballCar car) {
+                    car.projectA(new CannonballProjectA() {
+                        public void plan(CannonballDragon dragon) {
+                            dragon.expectOvertime();
+                            log(car);
+                            callNoList.add(car.getEntryNumber());
+                            sleep(1000);
+                        }
+                    }, 1);
+                    beforeNoSet.add(car.getEntryNumber());
+                    log("(after ProjectA) beforeNoSet: " + beforeNoSet);
+                    if (car.isEntryNumber(2)) {
+                        assertEquals(1, beforeNoSet.size()); // another thread still sleeps
+                    } else { // entryNumber: 1
+                        fail(); // not coming here
                     }
-                }, 1);
-                beforeNoSet.add(car.getEntryNumber());
-                log("(after ProjectA) beforeNoSet: " + beforeNoSet);
-                if (car.isEntryNumber(2)) {
-                    assertEquals(1, beforeNoSet.size()); // another thread still sleeps
-                } else { // entryNumber: 1
-                    fail(); // not coming here
+                    car.goal("ProjectA");
                 }
-                car.goal("ProjectA");
-            }
-        }, new CannonballOption().threadCount(2).expectExceptionAny("expected: overtime"));
+            }, new CannonballOption().threadCount(2));
+            failAsIllegalState();
+        } catch (AssertionFailedError e) {
+            assertContains(e.getMessage(), "expected: overtime");
+        }
         assertEquals(Arrays.asList(1), callNoList);
     }
 
@@ -288,23 +306,28 @@ public class CannonballTest extends PlainTestCase {
     //                                            Break Away
     //                                            ----------
     public void test_cannonball_projectA_breakAway_basic() throws Exception {
-        cannonball(new CannonballRun() {
-            public void drive(final CannonballCar car) {
-                car.projectA(new CannonballProjectA() {
-                    public void plan(CannonballDragon dragon) {
-                        dragon.releaseIfOvertime(2000);
-                        dragon.expectOvertime();
-                        log("Plan A");
-                    }
-                }, 1);
-                car.projectA(new CannonballProjectA() {
-                    public void plan(CannonballDragon dragon) {
-                        log("Plan B");
-                        sleep(100);
-                    }
-                }, 2);
-            }
-        }, new CannonballOption().threadCount(5).expectExceptionAny(AssertionFailedError.class));
+        try {
+            cannonball(new CannonballRun() {
+                public void drive(final CannonballCar car) {
+                    car.projectA(new CannonballProjectA() {
+                        public void plan(CannonballDragon dragon) {
+                            dragon.releaseIfOvertime(2000);
+                            dragon.expectOvertime();
+                            log("Plan A");
+                        }
+                    }, 1);
+                    car.projectA(new CannonballProjectA() {
+                        public void plan(CannonballDragon dragon) {
+                            log("Plan B");
+                            sleep(100);
+                        }
+                    }, 2);
+                }
+            }, new CannonballOption().threadCount(5));
+            failAsIllegalState();
+        } catch (AssertionFailedError e) {
+            log(e.getMessage());
+        }
         cannonball(new CannonballRun() {
             public void drive(final CannonballCar car) {
                 if (car.isEntryNumber(1)) {
@@ -318,19 +341,24 @@ public class CannonballTest extends PlainTestCase {
                 }, 2);
             }
         }, new CannonballOption().threadCount(2).expectExceptionAny(IllegalStateException.class));
-        cannonball(new CannonballRun() {
-            public void drive(final CannonballCar car) {
-                if (car.isEntryNumber(1)) {
-                    throw new AssertionFailedError("breakaway");
-                }
-                car.projectA(new CannonballProjectA() {
-                    public void plan(CannonballDragon dragon) {
-                        log("Plan B");
-                        sleep(100);
+        try {
+            cannonball(new CannonballRun() {
+                public void drive(final CannonballCar car) {
+                    if (car.isEntryNumber(1)) {
+                        throw new AssertionFailedError("breakaway");
                     }
-                }, 2);
-            }
-        }, new CannonballOption().threadCount(5).expectExceptionAny(AssertionFailedError.class));
+                    car.projectA(new CannonballProjectA() {
+                        public void plan(CannonballDragon dragon) {
+                            log("Plan B");
+                            sleep(100);
+                        }
+                    }, 2);
+                }
+            }, new CannonballOption().threadCount(5));
+            failAsIllegalState();
+        } catch (AssertionFailedError e) {
+            log(e.getMessage());
+        }
     }
 
     public void test_cannonball_projectA_breakAway_exception() throws Exception {
@@ -359,6 +387,162 @@ public class CannonballTest extends PlainTestCase {
     }
 
     // ===================================================================================
+    //                                                                  Expected Exception
+    //                                                                  ==================
+    public void test_cannonball_expectExceptionAny_type_basic() throws Exception {
+        cannonball(new CannonballRun() {
+            public void drive(CannonballCar car) {
+                log(car);
+                if (car.isEntryNumber(1)) {
+                    throw new IllegalStateException("foo\nbar");
+                }
+            }
+        }, new CannonballOption().threadCount(2).expectExceptionAny(IllegalStateException.class));
+    }
+
+    public void test_cannonball_expectExceptionAny_type_notFound() throws Exception {
+        try {
+            cannonball(new CannonballRun() {
+                public void drive(CannonballCar car) {
+                    log(car);
+                }
+            }, new CannonballOption().threadCount(2).expectExceptionAny(IllegalStateException.class));
+            failAsIllegalState();
+        } catch (AssertionFailedError e) {
+            log(e.getMessage());
+        }
+    }
+
+    public void test_cannonball_expectExceptionAny_message_basic() throws Exception {
+        cannonball(new CannonballRun() {
+            public void drive(CannonballCar car) {
+                log(car);
+                if (car.isEntryNumber(1)) {
+                    throw new IllegalStateException("foo\nbar");
+                }
+            }
+        }, new CannonballOption().threadCount(2).expectExceptionAny("oo"));
+    }
+
+    public void test_cannonball_expectExceptionAny_message_notFound_normallyDone() throws Exception {
+        try {
+            cannonball(new CannonballRun() {
+                public void drive(CannonballCar car) {
+                    log(car);
+                }
+            }, new CannonballOption().threadCount(2).expectExceptionAny("qux"));
+            failAsIllegalState();
+        } catch (AssertionFailedError e) {
+            log(e.getMessage());
+        }
+    }
+
+    public void test_cannonball_expectExceptionAny_message_notFound_with_unexpected() throws Exception {
+        try {
+            cannonball(new CannonballRun() {
+                public void drive(CannonballCar car) {
+                    log(car);
+                    if (car.isEntryNumber(1)) {
+                        throw new IllegalStateException("foo\nbar");
+                    }
+                }
+            }, new CannonballOption().threadCount(2).expectExceptionAny("qux"));
+            failAsIllegalState();
+        } catch (AssertionFailedError e) {
+            log(e.getMessage());
+        }
+    }
+
+    public void test_cannonball_expectExceptionAny_message_notFound_with_unexpected_more() throws Exception {
+        try {
+            cannonball(new CannonballRun() {
+                public void drive(CannonballCar car) {
+                    log(car);
+                    if (car.isEntryNumber(1)) {
+                        throw new IllegalStateException("foo\nbar");
+                    } else {
+                        ExceptionMessageBuilder br = new ExceptionMessageBuilder();
+                        br.addNotice("second");
+                        throw new RuntimeException(br.buildExceptionMessage());
+                    }
+                }
+            }, new CannonballOption().threadCount(2).expectExceptionAny("qux"));
+            failAsIllegalState();
+        } catch (AssertionFailedError e) {
+            log(e.getMessage());
+        }
+    }
+
+    public void test_cannonball_expectExceptionAny_message_found_with_unexpected_more() throws Exception {
+        cannonball(new CannonballRun() {
+            public void drive(CannonballCar car) {
+                log(car);
+                if (car.isEntryNumber(1)) {
+                    throw new IllegalStateException("foo\nbar");
+                } else if (car.isEntryNumber(2) || car.isEntryNumber(3)) {
+                    ExceptionMessageBuilder br = new ExceptionMessageBuilder();
+                    br.addNotice("second");
+                    throw new RuntimeException(br.buildExceptionMessage());
+                }
+            }
+        }, new CannonballOption().threadCount(5).expectExceptionAny("foo"));
+    }
+
+    public void test_cannonball_expectExceptionAny_message_found_with_assertionFailed() throws Exception {
+        try {
+            cannonball(new CannonballRun() {
+                public void drive(CannonballCar car) {
+                    log(car);
+                    if (car.isEntryNumber(1)) {
+                        throw new IllegalStateException("foo\nbar");
+                    } else if (car.isEntryNumber(2) || car.isEntryNumber(3)) {
+                        ExceptionMessageBuilder br = new ExceptionMessageBuilder();
+                        br.addNotice("second");
+                        throw new AssertionFailedError(br.buildExceptionMessage());
+                    }
+                }
+            }, new CannonballOption().threadCount(5).expectExceptionAny("foo"));
+            failAsIllegalState();
+        } catch (AssertionFailedError e) {
+            log(e.getMessage());
+        }
+    }
+
+    public void test_cannonball_noExpect_butExcetpion_basic() throws Exception {
+        try {
+            cannonball(new CannonballRun() {
+                public void drive(CannonballCar car) {
+                    log(car);
+                    if (car.isEntryNumber(1)) {
+                        throw new IllegalConditionBeanOperationException("foo\nbar");
+                    }
+                }
+            }, new CannonballOption().threadCount(2));
+            fail();
+        } catch (CannonballRetireException e) {
+            log(e.getMessage());
+        }
+    }
+
+    public void test_cannonball_noExpect_butExcetpion_more() throws Exception {
+        try {
+            cannonball(new CannonballRun() {
+                public void drive(CannonballCar car) {
+                    log(car);
+                    if (car.isEntryNumber(1)) {
+                        throw new IllegalConditionBeanOperationException("foo\nbar");
+                    } else {
+                        throw new IllegalConditionBeanOperationException("qux");
+                    }
+                }
+            }, new CannonballOption().threadCount(3));
+            fail();
+        } catch (CannonballRetireException e) {
+            log(e.getMessage());
+        }
+    }
+
+    // ===================================================================================
     //                                                                       Assist Helper
     //                                                                       =============
     protected synchronized void doWait() {
@@ -371,5 +555,9 @@ public class CannonballTest extends PlainTestCase {
 
     protected synchronized void doNotifyAll() {
         notifyAll();
+    }
+
+    protected void failAsIllegalState() {
+        throw new IllegalStateException("Assertion Failure"); // for when fail() caught
     }
 }

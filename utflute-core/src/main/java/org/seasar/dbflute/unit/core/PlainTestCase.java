@@ -58,8 +58,8 @@ import org.seasar.dbflute.unit.core.transaction.TransactionPerformer;
 import org.seasar.dbflute.unit.core.transaction.TransactionResource;
 import org.seasar.dbflute.util.DfCollectionUtil;
 import org.seasar.dbflute.util.DfResourceUtil;
-import org.seasar.dbflute.util.DfStringUtil;
 import org.seasar.dbflute.util.DfTypeUtil;
+import org.seasar.dbflute.util.Srl;
 
 /**
  * @author jflute
@@ -210,7 +210,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keyword The keyword string. (NotNull) 
      */
     protected void assertContains(String str, String keyword) {
-        if (!DfStringUtil.contains(str, keyword)) {
+        if (!Srl.contains(str, keyword)) {
             log("Asserted string: " + str); // might be large so show at log
             fail("the string should have the keyword but not found: " + keyword);
         }
@@ -230,7 +230,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keyword The keyword string. (NotNull) 
      */
     protected void assertContainsIgnoreCase(String str, String keyword) {
-        if (!DfStringUtil.containsIgnoreCase(str, keyword)) {
+        if (!Srl.containsIgnoreCase(str, keyword)) {
             log("Asserted string: " + str); // might be large so show at log
             fail("the string should have the keyword but not found: " + keyword);
         }
@@ -249,7 +249,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keywords The array of keyword string. (NotNull) 
      */
     protected void assertContainsAll(String str, String... keywords) {
-        if (!DfStringUtil.containsAll(str, keywords)) {
+        if (!Srl.containsAll(str, keywords)) {
             log("Asserted string: " + str); // might be large so show at log
             fail("the string should have all keywords but not found: " + newArrayList(keywords));
         }
@@ -268,7 +268,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keywords The array of keyword string. (NotNull) 
      */
     protected void assertContainsAllIgnoreCase(String str, String... keywords) {
-        if (!DfStringUtil.containsAllIgnoreCase(str, keywords)) {
+        if (!Srl.containsAllIgnoreCase(str, keywords)) {
             log("Asserted string: " + str); // might be large so show at log
             fail("the string should have all keywords but not found: " + newArrayList(keywords));
         }
@@ -288,7 +288,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keywords The array of keyword string. (NotNull) 
      */
     protected void assertContainsAny(String str, String... keywords) {
-        if (!DfStringUtil.containsAny(str, keywords)) {
+        if (!Srl.containsAny(str, keywords)) {
             log("Asserted string: " + str); // might be large so show at log
             fail("the string should have any keyword but not found: " + newArrayList(keywords));
         }
@@ -308,7 +308,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keywords The array of keyword string. (NotNull) 
      */
     protected void assertContainsAnyIgnoreCase(String str, String... keywords) {
-        if (!DfStringUtil.containsAnyIgnoreCase(str, keywords)) {
+        if (!Srl.containsAnyIgnoreCase(str, keywords)) {
             log("Asserted string: " + str); // might be large so show at log
             fail("the string should have any keyword but not found: " + newArrayList(keywords));
         }
@@ -328,7 +328,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keyword The keyword string. (NotNull) 
      */
     protected void assertNotContains(String str, String keyword) {
-        if (DfStringUtil.contains(str, keyword)) {
+        if (Srl.contains(str, keyword)) {
             log("Asserted string: " + str); // might be large so show at log
             fail("the string should not have the keyword but found: " + keyword);
         }
@@ -348,7 +348,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keyword The keyword string. (NotNull) 
      */
     protected void assertNotContainsIgnoreCase(String str, String keyword) {
-        if (DfStringUtil.containsIgnoreCase(str, keyword)) {
+        if (Srl.containsIgnoreCase(str, keyword)) {
             log("Asserted string: " + str); // might be large so show at log
             fail("the string should not have the keyword but found: " + keyword);
         }
@@ -371,7 +371,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keyword The keyword string. (NotNull) 
      */
     protected void assertContainsKeyword(Collection<String> strList, String keyword) {
-        if (!DfStringUtil.containsKeyword(newArrayList(strList), keyword)) {
+        if (!Srl.containsKeyword(newArrayList(strList), keyword)) {
             fail("the list should have the keyword but not found: " + keyword);
         }
     }
@@ -388,7 +388,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keywords The array of keyword string. (NotNull) 
      */
     protected void assertContainsKeywordAll(Collection<String> strList, String... keywords) {
-        if (!DfStringUtil.containsKeywordAll(newArrayList(strList), keywords)) {
+        if (!Srl.containsKeywordAll(newArrayList(strList), keywords)) {
             fail("the list should have all keywords but not found: " + newArrayList(keywords));
         }
     }
@@ -405,7 +405,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keywords The array of keyword string. (NotNull) 
      */
     protected void assertContainsKeywordAllIgnoreCase(Collection<String> strList, String... keywords) {
-        if (!DfStringUtil.containsKeywordAllIgnoreCase(newArrayList(strList), keywords)) {
+        if (!Srl.containsKeywordAllIgnoreCase(newArrayList(strList), keywords)) {
             fail("the list should have all keywords (case ignored) but not found: " + newArrayList(keywords));
         }
     }
@@ -422,7 +422,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keywords The array of keyword string. (NotNull) 
      */
     protected void assertContainsKeywordAny(Collection<String> strList, String... keywords) {
-        if (!DfStringUtil.containsKeywordAny(newArrayList(strList), keywords)) {
+        if (!Srl.containsKeywordAny(newArrayList(strList), keywords)) {
             fail("the list should have any keyword but not found: " + newArrayList(keywords));
         }
     }
@@ -440,7 +440,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keywords The array of keyword string. (NotNull) 
      */
     protected void assertContainsKeywordAnyIgnoreCase(Collection<String> strList, String... keywords) {
-        if (!DfStringUtil.containsKeywordAnyIgnoreCase(newArrayList(strList), keywords)) {
+        if (!Srl.containsKeywordAnyIgnoreCase(newArrayList(strList), keywords)) {
             fail("the list should have any keyword (case ignored) but not found: " + newArrayList(keywords));
         }
     }
@@ -647,15 +647,15 @@ public abstract class PlainTestCase extends TestCase {
     //                                                                       String Helper
     //                                                                       =============
     protected String replace(String str, String fromStr, String toStr) {
-        return DfStringUtil.replace(str, fromStr, toStr);
+        return Srl.replace(str, fromStr, toStr);
     }
 
     protected List<String> splitList(String str, String delimiter) {
-        return DfStringUtil.splitList(str, delimiter);
+        return Srl.splitList(str, delimiter);
     }
 
     protected List<String> splitListTrimmed(String str, String delimiter) {
-        return DfStringUtil.splitListTrimmed(str, delimiter);
+        return Srl.splitListTrimmed(str, delimiter);
     }
 
     protected String toString(Object obj) {

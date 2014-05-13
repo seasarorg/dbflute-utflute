@@ -371,7 +371,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keyword The keyword string. (NotNull) 
      */
     protected void assertContainsKeyword(Collection<String> strList, String keyword) {
-        if (!Srl.containsKeyword(newArrayList(strList), keyword)) {
+        if (!Srl.containsKeyword(strList, keyword)) {
             fail("the list should have the keyword but not found: " + keyword);
         }
     }
@@ -388,7 +388,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keywords The array of keyword string. (NotNull) 
      */
     protected void assertContainsKeywordAll(Collection<String> strList, String... keywords) {
-        if (!Srl.containsKeywordAll(newArrayList(strList), keywords)) {
+        if (!Srl.containsKeywordAll(strList, keywords)) {
             fail("the list should have all keywords but not found: " + newArrayList(keywords));
         }
     }
@@ -405,7 +405,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keywords The array of keyword string. (NotNull) 
      */
     protected void assertContainsKeywordAllIgnoreCase(Collection<String> strList, String... keywords) {
-        if (!Srl.containsKeywordAllIgnoreCase(newArrayList(strList), keywords)) {
+        if (!Srl.containsKeywordAllIgnoreCase(strList, keywords)) {
             fail("the list should have all keywords (case ignored) but not found: " + newArrayList(keywords));
         }
     }
@@ -422,7 +422,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keywords The array of keyword string. (NotNull) 
      */
     protected void assertContainsKeywordAny(Collection<String> strList, String... keywords) {
-        if (!Srl.containsKeywordAny(newArrayList(strList), keywords)) {
+        if (!Srl.containsKeywordAny(strList, keywords)) {
             fail("the list should have any keyword but not found: " + newArrayList(keywords));
         }
     }
@@ -440,7 +440,7 @@ public abstract class PlainTestCase extends TestCase {
      * @param keywords The array of keyword string. (NotNull) 
      */
     protected void assertContainsKeywordAnyIgnoreCase(Collection<String> strList, String... keywords) {
-        if (!Srl.containsKeywordAnyIgnoreCase(newArrayList(strList), keywords)) {
+        if (!Srl.containsKeywordAnyIgnoreCase(strList, keywords)) {
             fail("the list should have any keyword (case ignored) but not found: " + newArrayList(keywords));
         }
     }

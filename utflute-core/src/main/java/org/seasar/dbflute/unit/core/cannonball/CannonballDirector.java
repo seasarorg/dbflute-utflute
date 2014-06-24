@@ -72,13 +72,13 @@ public class CannonballDirector {
                     }
                 }
             } finally {
-                final CannonballFinalizer finallyRunner = option.getFinalizer();
-                if (finallyRunner != null) {
+                final CannonballFinalizer finalizer = option.getFinalizer();
+                if (finalizer != null) {
                     try {
-                        log("...Running finally for fired threads");
-                        finallyRunner.run();
+                        log("...Running finalizer for fired threads");
+                        finalizer.run();
                     } catch (RuntimeException continued) {
-                        log("Failed to run finally: " + continued.getMessage());
+                        handleFinalizerException(continued);
                     }
                 }
             }
@@ -169,6 +169,16 @@ public class CannonballDirector {
                 assertEquals(preResult, result);
             }
         }
+    }
+
+    protected void handleFinalizerException(RuntimeException continued) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("*Failed to run finalizer:");
+        sb.append(ln()).append("/= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =");
+        sb.append(ln()).append(continued.getMessage());
+        sb.append(ln()).append("= = = = = = = = = =/");
+        final String msg = sb.toString();
+        log(msg);
     }
 
     // ===================================================================================

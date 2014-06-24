@@ -64,7 +64,7 @@ public class PoliceStoryMiscFileChase {
         br.addElement(cause.getClass());
         br.addElement(cause.getMessage());
         final String msg = br.buildExceptionMessage();
-        throw new IllegalStateException(msg);
+        throw new IllegalStateException(msg, cause);
     }
 
     protected void doChase(final File baseDir, final PoliceStoryMiscFileHandler handler) {

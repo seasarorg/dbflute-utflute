@@ -121,7 +121,7 @@ public class PoliceStory {
             projectCanonicalPath = projectDir.getCanonicalPath();
         } catch (IOException e) {
             String msg = "Failed to get canonical path from: " + projectDir;
-            throw new IllegalStateException(msg);
+            throw new IllegalStateException(msg, e);
         }
         return projectCanonicalPath;
     }

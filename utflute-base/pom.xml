@@ -4,15 +4,15 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.seasar.dbflute</groupId>
 	<artifactId>utflute-base</artifactId>
-	<version>0.4.5</version>
+	<version>0.4.6</version>
 	<packaging>pom</packaging>
 
 	<name>UTFlute Pom Base</name>
 	<description>The base project of pom for unit test library (with DBFlute)</description>
 
 	<properties>
-		<dbflute.version>1.0.5F</dbflute.version>
-		<utflute.core.version>0.4.5</utflute.core.version>
+		<dbflute.version>1.0.5J</dbflute.version>
+		<utflute.core.version>0.4.6</utflute.core.version>
 
 		<seasar.version>2.4.46</seasar.version>
 		<spring.version>3.0.5.RELEASE</spring.version>

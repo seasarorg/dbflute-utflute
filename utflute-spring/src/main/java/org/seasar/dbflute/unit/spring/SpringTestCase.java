@@ -174,15 +174,20 @@ public abstract class SpringTestCase extends InjectionTestCase {
     }
 
     protected void xinitializeContainer(String[] configFiles) {
-        log("...Initializing spring: " + Arrays.asList(configFiles));
         if (configFiles != null && configFiles.length > 0) {
-            _xcurrentActiveContext = new ClassPathXmlApplicationContext(configFiles);
+            log("...Initializing spring by configuration files: " + Arrays.asList(configFiles));
+            _xcurrentActiveContext = createApplicationContext(configFiles);
         } else {
-            final BeanFactoryLocator locator = ContextSingletonBeanFactoryLocator.getInstance();
-            final BeanFactoryReference ref = locator.useBeanFactory("context");
-            _xcurrentActiveContext = (ApplicationContext) ref.getFactory();
+            log("...Initializing spring by provided default context.");
+            _xcurrentActiveContext = provideDefaultApplicationContext();
         }
         _xcachedContext = _xcurrentActiveContext;
+    }
+
+    protected ApplicationContext provideDefaultApplicationContext() {
+        final BeanFactoryLocator locator = ContextSingletonBeanFactoryLocator.getInstance();
+        final BeanFactoryReference ref = locator.useBeanFactory("context");
+        return (ApplicationContext) ref.getFactory();
     }
 
     // -----------------------------------------------------

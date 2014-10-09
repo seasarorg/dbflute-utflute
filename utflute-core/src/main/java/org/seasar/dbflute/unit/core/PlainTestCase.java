@@ -114,6 +114,7 @@ public abstract class PlainTestCase extends TestCase {
         context.setAccessDate(currentDate());
         context.setAccessUser(Thread.currentThread().getName());
         context.setAccessProcess(getClass().getSimpleName());
+        context.setAccessModule(getClass().getSimpleName());
         AccessContext.setAccessContextOnThread(context);
     }
 
